@@ -1,15 +1,17 @@
 import { Worker, type Job } from 'bullmq';
-import IORedis from 'ioredis';
+import { Redis } from 'ioredis';
 
-type SystemJob = { correlationId: string };
+type SystemJob = {
+  correlationId: string;
+};
 
-const connection = new IORedis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+const connection = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
   maxRetriesPerRequest: null,
 });
 
-const worker = new Worker<SystemJob>(
+const worker = new Worker<SystemJob, void>(
   'bloctrust.system',
-  async (job: Job<SystemJob>) => {
+  (job: Job<SystemJob>): Promise<void> => {
     console.info(
       JSON.stringify({
         event: 'job.completed',
@@ -18,11 +20,13 @@ const worker = new Worker<SystemJob>(
         correlationId: job.data.correlationId,
       }),
     );
+
+    return Promise.resolve();
   },
   { connection },
 );
 
-worker.on('failed', (job, error) => {
+worker.on('failed', (job: Job<SystemJob> | undefined, error: Error) => {
   console.error(
     JSON.stringify({
       event: 'job.failed',
@@ -35,6 +39,7 @@ worker.on('failed', (job, error) => {
 
 async function shutdown(signal: string): Promise<void> {
   console.info(JSON.stringify({ event: 'worker.shutdown', signal }));
+
   await worker.close();
   await connection.quit();
 }
