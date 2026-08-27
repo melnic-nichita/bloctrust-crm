@@ -10,14 +10,14 @@ BlocTrust provides one tenant-isolated operational record where security is visi
 
 ## Primary users
 
-| Persona | Authorized outcome |
-| --- | --- |
-| Organization owner | Creates the tenant, manages recovery, and assigns administrators. |
-| Administrator | Manages buildings, vendors, contracts, incidents, invoices, and communication. |
-| Accountant | Reviews invoice evidence, records status, and exports approved records. |
-| Resident | Views permitted costs, reports incidents, communicates, and votes. |
-| Contractor | Receives scoped work orders and submits controlled evidence. |
-| Auditor | Uses time-limited, redacted, read-only access to approved records. |
+| Persona            | Authorized outcome                                                             |
+| ------------------ | ------------------------------------------------------------------------------ |
+| Organization owner | Creates the tenant, manages recovery, and assigns administrators.              |
+| Administrator      | Manages buildings, vendors, contracts, incidents, invoices, and communication. |
+| Accountant         | Reviews invoice evidence, records status, and exports approved records.        |
+| Resident           | Views permitted costs, reports incidents, communicates, and votes.             |
+| Contractor         | Receives scoped work orders and submits controlled evidence.                   |
+| Auditor            | Uses time-limited, redacted, read-only access to approved records.             |
 
 ## Hero workflow
 

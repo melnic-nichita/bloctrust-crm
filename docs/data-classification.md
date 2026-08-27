@@ -1,11 +1,11 @@
 # Data classification and retention baseline
 
-| Class | Examples | Authorized readers | Baseline retention | Handling |
-| --- | --- | --- | --- | --- |
-| Public | Product name, documentation, synthetic demo screenshots | Anyone | Indefinite | Must contain no real personal or financial data. |
-| Internal | Workflow metrics, non-sensitive configuration, vendor tags | Tenant staff by role | Tenant lifecycle + 90 days | Tenant-scoped; redact from public reports. |
-| Confidential | Resident contact/occupancy, incidents, invoice fields, contracts | Resource policy and role | Legal/business need; policy configurable | Encrypt in transit/at rest; audit sensitive reads. |
-| Restricted | Full bank account, session/recovery state, document contents, encryption keys | Smallest eligible role/service | Minimum operational/legal period | Mask by default; application encryption where specified; never log. |
+| Class        | Examples                                                                      | Authorized readers             | Baseline retention                       | Handling                                                            |
+| ------------ | ----------------------------------------------------------------------------- | ------------------------------ | ---------------------------------------- | ------------------------------------------------------------------- |
+| Public       | Product name, documentation, synthetic demo screenshots                       | Anyone                         | Indefinite                               | Must contain no real personal or financial data.                    |
+| Internal     | Workflow metrics, non-sensitive configuration, vendor tags                    | Tenant staff by role           | Tenant lifecycle + 90 days               | Tenant-scoped; redact from public reports.                          |
+| Confidential | Resident contact/occupancy, incidents, invoice fields, contracts              | Resource policy and role       | Legal/business need; policy configurable | Encrypt in transit/at rest; audit sensitive reads.                  |
+| Restricted   | Full bank account, session/recovery state, document contents, encryption keys | Smallest eligible role/service | Minimum operational/legal period         | Mask by default; application encryption where specified; never log. |
 
 ## Field decisions
 

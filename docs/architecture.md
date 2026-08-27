@@ -43,17 +43,17 @@ Direct cross-module database manipulation is prohibited. Cross-module behavior u
 
 ## Repository structure
 
-| Path | Responsibility |
-| --- | --- |
-| `apps/web` | Next.js resident and administrator UI. |
-| `apps/api` | NestJS REST API and future realtime gateway. |
-| `apps/worker` | BullMQ processors, outbox relay, and schedules. |
+| Path              | Responsibility                                                 |
+| ----------------- | -------------------------------------------------------------- |
+| `apps/web`        | Next.js resident and administrator UI.                         |
+| `apps/api`        | NestJS REST API and future realtime gateway.                   |
+| `apps/worker`     | BullMQ processors, outbox relay, and schedules.                |
 | `packages/domain` | Framework-neutral types, events, policies, and state machines. |
-| `packages/ui` | Accessible shared components. |
-| `packages/config` | Shared tool configuration. |
-| `prisma` | Schema, migrations, and synthetic seed data. |
-| `infra` | Container and operations configuration. |
-| `tests/security` | Attack-oriented regression tests. |
+| `packages/ui`     | Accessible shared components.                                  |
+| `packages/config` | Shared tool configuration.                                     |
+| `prisma`          | Schema, migrations, and synthetic seed data.                   |
+| `infra`           | Container and operations configuration.                        |
+| `tests/security`  | Attack-oriented regression tests.                              |
 
 ## Critical invariants
 

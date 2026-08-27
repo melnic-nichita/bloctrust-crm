@@ -8,11 +8,11 @@ services:
       POSTGRES_USER: bloctrust
       POSTGRES_PASSWORD: bloctrust_dev
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bloctrust -d bloctrust"]
+      test: ['CMD-SHELL', 'pg_isready -U bloctrust -d bloctrust']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -20,13 +20,13 @@ services:
 
   redis:
     image: redis:8-alpine
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ['redis-server', '--appendonly', 'yes']
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -39,12 +39,12 @@ services:
       MINIO_ROOT_USER: bloctrust_dev
       MINIO_ROOT_PASSWORD: replace_for_non_local_use
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ['CMD', 'mc', 'ready', 'local']
       interval: 10s
       timeout: 5s
       retries: 10
@@ -53,11 +53,11 @@ services:
   clamav:
     image: clamav/clamav:1.4.6_base-debian13-slim
     ports:
-      - "3310:3310"
+      - '3310:3310'
     volumes:
       - clamav_signatures:/var/lib/clamav
     healthcheck:
-      test: ["CMD-SHELL", "clamdscan --ping 1"]
+      test: ['CMD-SHELL', 'clamdscan --ping 1']
       interval: 30s
       timeout: 10s
       start_period: 90s
@@ -67,8 +67,8 @@ services:
   mailpit:
     image: axllent/mailpit:v1.27
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - '1025:1025'
+      - '8025:8025'
     restart: unless-stopped
 
 volumes:

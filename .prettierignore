@@ -3,3 +3,5 @@ dist
 .next
 coverage
 pnpm-lock.yaml
+generated/prisma/
+apps/web/next-env.d.ts
