@@ -1,0 +1,18 @@
+rules:
+  - id: no-unsafe-dynamic-sql
+    message: Avoid unsafe raw SQL. Use parameterized Prisma queries or reviewed migration SQL.
+    severity: ERROR
+    languages: [typescript]
+    patterns:
+      - pattern-either:
+          - pattern: $CLIENT.$queryRawUnsafe(...)
+          - pattern: $CLIENT.$executeRawUnsafe(...)
+
+  - id: no-sensitive-console-values
+    message: Do not log obvious sensitive fields.
+    severity: WARNING
+    languages: [typescript]
+    pattern-either:
+      - pattern: console.$METHOD(..., $OBJ.password, ...)
+      - pattern: console.$METHOD(..., $OBJ.refreshToken, ...)
+      - pattern: console.$METHOD(..., $OBJ.bankAccount, ...)

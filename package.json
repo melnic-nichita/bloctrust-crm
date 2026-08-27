@@ -1,0 +1,53 @@
+{
+  "name": "bloctrust-crm",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "esbuild",
+      "msgpackr-extract",
+      "prisma"
+    ]
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @bloctrust/api --filter @bloctrust/web --filter @bloctrust/worker dev",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "validate:foundation": "node scripts/validate-foundation.mjs",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "infra:up": "docker compose up -d postgres redis minio clamav mailpit",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.34.0",
+    "@prisma/adapter-pg": "^7.9.0",
+    "@types/node": "^24.3.0",
+    "@types/pg": "^8.15.5",
+    "dotenv": "^17.2.1",
+    "eslint": "^9.34.0",
+    "pg": "^8.16.3",
+    "prettier": "^3.6.2",
+    "prisma": "^7.9.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.41.0",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@prisma/client": "7.10.0"
+  }
+}

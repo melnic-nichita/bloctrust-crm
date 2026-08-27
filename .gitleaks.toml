@@ -1,0 +1,13 @@
+title = "BlocTrust Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generated and dependency paths"
+paths = [
+  '''node_modules/''',
+  '''dist/''',
+  '''\.next/''',
+  '''coverage/'''
+]
