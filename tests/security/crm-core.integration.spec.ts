@@ -221,7 +221,17 @@ describe.skipIf(!enabled)('Milestone 0.3 CRM security boundary', () => {
           },
         },
       }),
-    ).rejects.toThrow('referenced by a contract');
+    ).rejects.toMatchObject({ code: 'P2003' });
+
+    await expect(
+      prisma.vendorBuilding.count({
+        where: {
+          organizationId: organizationA,
+          vendorId: vendorA,
+          buildingId: buildingA,
+        },
+      }),
+    ).resolves.toBe(1);
   });
 
   it('keeps bank versions masked, immutable, and audits the reason for every reveal', async () => {
