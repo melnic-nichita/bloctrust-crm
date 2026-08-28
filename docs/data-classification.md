@@ -22,6 +22,12 @@ Every new sensitive field requires:
 
 - Vendor bank-account values are encrypted at the application layer and displayed masked by default.
 - Refresh-token identifiers, recovery codes, and passwords are stored only as hashes.
+- Password hashes, refresh-token hashes, CSRF hashes, and session metadata are Restricted and never
+  enter logs or API responses.
+- HIBP screening sends only the five-character SHA-1 prefix; plaintext passwords and full digests
+  never leave the API process.
 - Passkey public credentials may be stored; private keys never reach the server.
+- Passkey challenges expire after five minutes and are retained only long enough to investigate
+  challenge replay and authentication abuse.
 - Invoice/document bytes never enter logs, notifications, or telemetry.
 - Deactivated users retain pseudonymized references required for audit evidence.

@@ -9,17 +9,18 @@
 - [x] Local infrastructure and health contracts.
 - [x] Initial tenancy schema and deterministic seed design.
 - [x] CI and security-scanning contracts.
-- [ ] Install dependencies and generate the lockfile in a network-enabled development environment.
+- [x] Install dependencies and generate the lockfile in a network-enabled development environment.
 - [ ] Run the full Docker and migration rehearsal.
 
 ## Milestone 0.2 - identity and tenant boundary
 
-- [ ] Organization creation and membership roles.
-- [ ] Argon2id password fallback and HIBP screening.
-- [ ] Cookie session rotation, reuse detection, and logout-all.
-- [ ] Passkey registration and recent step-up verification.
-- [ ] Transaction-scoped PostgreSQL RLS context.
-- [ ] Cross-tenant, forged-role, CSRF, and replay tests.
+- [x] Organization creation and membership roles.
+- [x] Argon2id password fallback and HIBP screening.
+- [x] Cookie session rotation, reuse detection, and logout-all.
+- [x] Passkey registration and recent step-up verification.
+- [x] Transaction-scoped PostgreSQL RLS context.
+- [x] Cross-tenant, forged-role, CSRF, and replay test suites.
+- [ ] Pass the Docker migration and PostgreSQL integration-test rehearsal.
 
 ## Milestone 0.3 - CRM core
 

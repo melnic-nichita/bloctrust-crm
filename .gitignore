@@ -10,3 +10,5 @@ coverage/
 tmp/
 storage/
 prisma/dev.db
+generated/prisma/
+apps/api/src/generated/

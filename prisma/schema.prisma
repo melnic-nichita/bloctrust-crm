@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../apps/api/src/generated/prisma"
 }
 
 datasource db {
@@ -27,10 +27,16 @@ enum MembershipStatus {
   ENDED
 }
 
+enum PasskeyChallengePurpose {
+  REGISTRATION
+  STEP_UP
+}
+
 model User {
   id                  String               @id @default(uuid()) @db.Uuid
   email               String               @unique @db.VarChar(320)
   displayName         String               @db.VarChar(120)
+  passwordHash        String?              @db.VarChar(512)
   status              UserStatus           @default(ACTIVE)
   createdAt           DateTime             @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime             @updatedAt @db.Timestamptz(3)
@@ -38,6 +44,7 @@ model User {
   sessions            Session[]
   webAuthnCredentials WebAuthnCredential[]
   recoveryCodes       RecoveryCode[]
+  passkeyChallenges   PasskeyChallenge[]
 }
 
 model Organization {
@@ -48,6 +55,7 @@ model Organization {
   updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
   memberships Membership[]
   invitations Invitation[]
+  sessions    Session[]
 }
 
 model Membership {
@@ -84,36 +92,72 @@ model Invitation {
 }
 
 model Session {
-  id               String    @id @default(uuid()) @db.Uuid
-  userId           String    @db.Uuid
-  tokenFamilyId    String    @db.Uuid
-  refreshTokenHash String    @unique @db.VarChar(128)
-  userAgent        String?   @db.VarChar(512)
-  ipAddress        String?   @db.Inet
-  lastUsedAt       DateTime  @default(now()) @db.Timestamptz(3)
-  expiresAt        DateTime  @db.Timestamptz(3)
-  revokedAt        DateTime? @db.Timestamptz(3)
-  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String                @id @default(uuid()) @db.Uuid
+  userId            String                @db.Uuid
+  organizationId    String                @db.Uuid
+  tokenFamilyId     String                @db.Uuid
+  refreshTokenHash  String                @unique @db.VarChar(128)
+  csrfTokenHash     String                @db.VarChar(128)
+  userAgent         String?               @db.VarChar(512)
+  ipAddress         String?               @db.Inet
+  rotationCounter   Int                   @default(0)
+  stepUpVerifiedAt  DateTime?             @db.Timestamptz(3)
+  lastUsedAt        DateTime              @default(now()) @db.Timestamptz(3)
+  expiresAt         DateTime              @db.Timestamptz(3)
+  revokedAt         DateTime?             @db.Timestamptz(3)
+  createdAt         DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime              @updatedAt @db.Timestamptz(3)
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  refreshTokens     SessionRefreshToken[]
+  passkeyChallenges PasskeyChallenge[]
 
   @@index([userId, revokedAt])
+  @@index([organizationId, revokedAt])
   @@index([tokenFamilyId])
 }
 
+model SessionRefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  sessionId String    @db.Uuid
+  tokenHash String    @unique @db.VarChar(128)
+  expiresAt DateTime  @db.Timestamptz(3)
+  usedAt    DateTime? @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, usedAt, revokedAt])
+}
+
+model PasskeyChallenge {
+  id        String                  @id @default(uuid()) @db.Uuid
+  userId    String                  @db.Uuid
+  sessionId String                  @db.Uuid
+  purpose   PasskeyChallengePurpose
+  challenge String                  @unique @db.VarChar(128)
+  expiresAt DateTime                @db.Timestamptz(3)
+  usedAt    DateTime?               @db.Timestamptz(3)
+  createdAt DateTime                @default(now()) @db.Timestamptz(3)
+  user      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session   Session                 @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, purpose, usedAt])
+}
+
 model WebAuthnCredential {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @db.Uuid
-  credentialId String   @unique @db.VarChar(512)
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  credentialId String    @unique @db.VarChar(512)
   publicKey    Bytes
-  counter      BigInt   @default(0)
+  counter      BigInt    @default(0)
   transports   String[]
-  deviceName   String?  @db.VarChar(120)
-  backedUp     Boolean  @default(false)
+  deviceName   String?   @db.VarChar(120)
+  backedUp     Boolean   @default(false)
   lastUsedAt   DateTime? @db.Timestamptz(3)
-  createdAt    DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

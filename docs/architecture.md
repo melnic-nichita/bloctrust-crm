@@ -52,7 +52,7 @@ Direct cross-module database manipulation is prohibited. Cross-module behavior u
 | `packages/ui`     | Accessible shared components.                                  |
 | `packages/config` | Shared tool configuration.                                     |
 | `prisma`          | Schema, migrations, and synthetic seed data.                   |
-| `infra`           | Container and operations configuration.                        |
+| `compose.yaml`    | Local container and operations configuration.                  |
 | `tests/security`  | Attack-oriented regression tests.                              |
 
 ## Critical invariants
@@ -63,3 +63,17 @@ Direct cross-module database manipulation is prohibited. Cross-module behavior u
 - OCR creates suggestions only and cannot approve financial data.
 - Published decision snapshots and audit events are append-only.
 - External events and jobs are idempotent under replay.
+
+## Identity and tenant request path
+
+1. The access cookie carries only signed identity, session, organization, and expiry identifiers.
+2. The API loads the active session, user status, and membership role from PostgreSQL; it never
+   accepts a role or step-up timestamp from the client.
+3. Route policy verifies the server-loaded membership and requested organization identifier.
+4. Tenant repositories start a transaction, assume the non-login `bloctrust_app` role, and set
+   `app.organization_id` locally.
+5. PostgreSQL RLS filters reads and blocks writes outside that organization, even if a repository
+   query omits its tenant predicate.
+
+System-scoped identity queries use the migration owner connection only inside the identity module.
+Tenant-owned reads and writes must use `TenantDatabaseService.run`.
