@@ -19,6 +19,7 @@ for (const proof of [
   'model Contract',
   'model AuditEvent',
   '@@unique([id, organizationId])',
+  'moduleFormat = "cjs"',
 ]) {
   if (!schema.includes(proof)) failures.push(`CRM schema is missing ${proof}`);
 }
