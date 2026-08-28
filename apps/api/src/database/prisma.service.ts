@@ -39,6 +39,6 @@ export type DatabaseTransaction = Pick<
   | 'passkeyChallenge'
   | 'webAuthnCredential'
   | 'recoveryCode'
-  | '$executeRawUnsafe'
+  | '$executeRaw'
   | '$queryRaw'
 >;

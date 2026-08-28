@@ -10,7 +10,7 @@ export class TenantDatabaseService {
 
   async run<T>(organizationId: string, work: TenantWork<T>): Promise<T> {
     return this.prisma.transaction(async (transaction) => {
-      await transaction.$executeRawUnsafe('SET LOCAL ROLE bloctrust_app');
+      await transaction.$executeRaw`SET LOCAL ROLE bloctrust_app`;
       await transaction.$queryRaw`SELECT set_config('app.organization_id', ${organizationId}, true)`;
 
       return work(transaction);

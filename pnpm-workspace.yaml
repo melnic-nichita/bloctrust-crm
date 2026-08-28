@@ -2,6 +2,13 @@ packages:
   - apps/*
   - packages/*
 
+blockExoticSubdeps: true
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  # Existing locked watcher release; keep this exception exact and review it on upgrades.
+  - chokidar@4.0.3
+
 onlyBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'
