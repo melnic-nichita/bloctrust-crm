@@ -20,6 +20,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
+        env:
+          # Client generation only needs a syntactically valid URL; this job does not connect.
+          DATABASE_URL: postgresql://bloctrust:bloctrust_ci@localhost:5432/bloctrust_ci?schema=public
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
