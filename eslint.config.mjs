@@ -29,6 +29,8 @@ export default tseslint.config(
       'apps/api/src/identity/passkey.service.ts',
       'apps/api/src/identity/session.service.ts',
       'apps/api/src/organizations/**/*.ts',
+      'apps/api/src/crm/**/*.service.ts',
+      'apps/api/src/crm/audit.ts',
     ],
     rules: {
       '@typescript-eslint/no-unsafe-argument': 'off',

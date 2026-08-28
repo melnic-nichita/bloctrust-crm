@@ -13,6 +13,14 @@ Milestone 0.2 automated suites:
 - `password.spec.ts` - Argon2id encoding and verification contract.
 - `step-up.spec.ts` - recent server-side passkey verification window.
 
+Milestone 0.3 automated suites:
+
+- `crm-core.integration.spec.ts` - tenant-scoped CRM search, cross-tenant relationships, masked and
+  immutable bank versions, audited reveal, and stale-write conflict.
+- `bank-encryption.spec.ts` - AES-GCM round trip and tenant/vendor ciphertext binding.
+- `audit-redaction.spec.ts` - restricted fields excluded from vendor/contract snapshots.
+- `concurrency.spec.ts` - `If-Match` parsing and HTTP 409 stale-write behavior.
+
 Future suites:
 
 - `uploads` - EICAR, oversized, double-extension, signature mismatch, and key guessing.

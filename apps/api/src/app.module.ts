@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { CsrfGuard } from './common/csrf.guard.js';
 import { CsrfService } from './common/csrf.service.js';
+import { CrmModule } from './crm/crm.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { RolesGuard } from './identity/roles.guard.js';
@@ -12,7 +13,7 @@ import { VersionController } from './version.controller.js';
 import { HealthModule } from './health/health.module.js';
 
 @Module({
-  imports: [DatabaseModule, HealthModule, IdentityModule, OrganizationsModule],
+  imports: [DatabaseModule, HealthModule, IdentityModule, OrganizationsModule, CrmModule],
   controllers: [VersionController],
   providers: [
     CsrfService,

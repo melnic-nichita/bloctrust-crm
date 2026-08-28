@@ -24,9 +24,12 @@
 
 ## Milestone 0.3 - CRM core
 
-- [ ] Buildings, apartments, occupancy, and building access.
-- [ ] Vendor Trust Passport, append-only bank accounts, and contracts.
-- [ ] Optimistic concurrency, scoped search, audit events, and masked reads.
+- [x] Buildings, apartments, occupancy, and building access.
+- [x] Vendor Trust Passport, append-only bank accounts, and contracts.
+- [x] Optimistic concurrency, scoped search, audit events, and masked reads.
+- [x] Expiring-contract and incomplete-vendor dashboards.
+- [x] Cross-tenant CRM, immutable-bank, reveal-audit, and stale-write tests.
+- [ ] Pass the Docker migration and PostgreSQL integration-test rehearsal for the 0.3 migration.
 
 ## Milestone 0.4 - hero vertical slice
 

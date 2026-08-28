@@ -8,7 +8,7 @@ export class VersionController {
   getVersion(): { name: string; version: string; environment: string } {
     return {
       name: 'bloctrust-api',
-      version: process.env.APP_VERSION ?? '0.2.0-dev',
+      version: process.env.APP_VERSION ?? '0.3.0-dev',
       environment: process.env.NODE_ENV ?? 'development',
     };
   }
