@@ -21,6 +21,13 @@ Every new sensitive field requires:
 ## Initial restricted-field rules
 
 - Vendor bank-account values are encrypted at the application layer and displayed masked by default.
+- The encrypted bank payload contains account number, account holder, and bank name. Its tenant and
+  vendor identifiers are authenticated additional data; only masks, key ID, and verification
+  metadata may appear in ordinary API responses.
+- Every successful full bank reveal requires recent step-up, an eligible role, a reason, and an
+  append-only audit event in the same transaction.
+- Resident occupancy and vendor contacts remain Confidential. Administrators see them only within
+  organization and building grants; synthetic fixtures must use reserved example identities.
 - Refresh-token identifiers, recovery codes, and passwords are stored only as hashes.
 - Password hashes, refresh-token hashes, CSRF hashes, and session metadata are Restricted and never
   enter logs or API responses.

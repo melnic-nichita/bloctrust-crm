@@ -2,22 +2,21 @@
 
 BlocTrust is a security-first, multi-tenant operations CRM for apartment associations and small property managers in Moldova. Its portfolio-defining workflow detects a vendor bank-account change, freezes a risky invoice, and requires two distinct step-up-verified administrators before approval.
 
-## Current milestone: 0.2.0 identity and tenant boundary
+## Current milestone: 0.3.0 CRM core
 
-Milestone 0.2 preserves the 0.1 foundation and adds:
+Milestone 0.3 preserves the identity and tenant boundary from 0.2 and adds:
 
-- organization onboarding with an owner membership;
-- Node.js Argon2id password hashing and HIBP k-anonymity screening;
-- signed short-lived access cookies and one-time refresh-token rotation;
-- token-family revocation when a consumed refresh token is replayed;
-- trusted-Origin and double-submit CSRF enforcement;
-- WebAuthn passkey registration and five-minute step-up verification;
-- server-loaded membership roles with no client role claims;
-- tenant-scoped transactions that activate PostgreSQL RLS;
-- onboarding, login, and security-management web screens;
-- forged-role, CSRF, session-forgery, refresh-replay, and cross-tenant tests.
+- buildings, apartments, dated resident occupancy, and administrator building grants;
+- Vendor Trust Passports with verified contacts, tags, notes, and linked buildings;
+- AES-256-GCM application encryption and append-only vendor bank-account versions;
+- masked bank reads plus reasoned, step-up-protected, transactionally audited reveal;
+- contracts with value limits, categories, dates, status, and document references;
+- tenant-scoped search, cursor pagination, and optimistic concurrency conflicts;
+- redacted vendor/contract audit events and operational dashboards;
+- an administrator CRM at `http://localhost:3000/crm`.
 
-No real payments, invoices, resident data, banking credentials, or production secrets belong in this repository.
+No real payments, invoices, resident data, banking credentials, or production secrets belong in
+this repository. The deterministic 0.3 fixtures are synthetic and non-payable.
 
 ## Prerequisites
 
@@ -63,6 +62,19 @@ The web app runs at `http://localhost:3000`, the API at `http://localhost:3001/a
 - `GET /api/v1/organizations/:organizationId` - RLS-scoped organization read
 - `GET /api/v1/organizations/:organizationId/members` - role-protected membership read
 
+## CRM endpoints
+
+- `/api/v1/organizations/:organizationId/crm/buildings` - buildings, apartments, and access
+- `/api/v1/organizations/:organizationId/crm/residents` - active residents available for occupancy
+- `/api/v1/organizations/:organizationId/crm/vendors` - Vendor Trust Passports and contacts
+- `/api/v1/organizations/:organizationId/crm/vendors/:vendorId/bank-accounts` - masked versions
+- `/api/v1/organizations/:organizationId/crm/contracts` - scoped contract register
+- `/api/v1/organizations/:organizationId/crm/dashboard` - expiry and evidence queues
+- `/api/v1/organizations/:organizationId/crm/audit-events` - redacted audit timeline
+
+PATCH requests require an `If-Match` version. Bank create, verification, and reveal routes require
+recent passkey step-up; reveal also requires a reason.
+
 All state-changing browser requests require a trusted `Origin`. Once cookies exist, the readable
 CSRF cookie must also be copied into `X-CSRF-Token`.
 
@@ -87,6 +99,7 @@ docker compose ps
 - [Data classification](docs/data-classification.md)
 - [Release backlog](docs/release-backlog.md)
 - [Milestone 0.2 security design](docs/milestone-0.2.md)
+- [Milestone 0.3 CRM/security design](docs/milestone-0.3.md)
 - [Architecture decisions](docs/adr/README.md)
 
 ## First vertical slice

@@ -32,6 +32,26 @@ enum PasskeyChallengePurpose {
   STEP_UP
 }
 
+enum VendorStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum BankAccountVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
 model User {
   id                  String               @id @default(uuid()) @db.Uuid
   email               String               @unique @db.VarChar(320)
@@ -56,21 +76,33 @@ model Organization {
   memberships Membership[]
   invitations Invitation[]
   sessions    Session[]
+  buildings   Building[]
+  apartments  Apartment[]
+  occupancies Occupancy[]
+  vendors     Vendor[]
+  contracts   Contract[]
+  auditEvents AuditEvent[]
 }
 
 model Membership {
-  id             String           @id @default(uuid()) @db.Uuid
-  organizationId String           @db.Uuid
-  userId         String           @db.Uuid
-  role           MembershipRole
-  status         MembershipStatus @default(ACTIVE)
-  validUntil     DateTime?        @db.Timestamptz(3)
-  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime         @updatedAt @db.Timestamptz(3)
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  user           User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  id                         String                          @id @default(uuid()) @db.Uuid
+  organizationId             String                          @db.Uuid
+  userId                     String                          @db.Uuid
+  role                       MembershipRole
+  status                     MembershipStatus                @default(ACTIVE)
+  validUntil                 DateTime?                       @db.Timestamptz(3)
+  createdAt                  DateTime                        @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime                        @updatedAt @db.Timestamptz(3)
+  organization               Organization                    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user                       User                            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  buildingAccess             MembershipBuildingAccess[]
+  occupancies                Occupancy[]
+  auditEvents                AuditEvent[]
+  bankAccountVersionsCreated VendorBankAccountVersion[]      @relation("BankAccountVersionCreator")
+  bankAccountVerifications   VendorBankAccountVerification[] @relation("BankAccountVerifier")
 
   @@unique([organizationId, userId])
+  @@unique([id, organizationId])
   @@index([userId, status])
   @@index([organizationId, role, status])
 }
@@ -171,4 +203,231 @@ model RecoveryCode {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, usedAt])
+}
+
+model Building {
+  id               String                     @id @default(uuid()) @db.Uuid
+  organizationId   String                     @db.Uuid
+  name             String                     @db.VarChar(160)
+  addressLine1     String                     @db.VarChar(200)
+  addressLine2     String?                    @db.VarChar(200)
+  city             String                     @db.VarChar(120)
+  postalCode       String                     @db.VarChar(24)
+  countryCode      String                     @db.Char(2)
+  version          Int                        @default(1)
+  createdAt        DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime                   @updatedAt @db.Timestamptz(3)
+  organization     Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  apartments       Apartment[]
+  membershipAccess MembershipBuildingAccess[]
+  vendorLinks      VendorBuilding[]
+  contractLinks    ContractBuilding[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, name])
+  @@index([organizationId, city, name])
+}
+
+model Apartment {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  buildingId     String       @db.Uuid
+  unitNumber     String       @db.VarChar(40)
+  floor          String?      @db.VarChar(20)
+  version        Int          @default(1)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  building       Building     @relation(fields: [buildingId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  occupancies    Occupancy[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, buildingId, unitNumber])
+  @@index([organizationId, unitNumber])
+}
+
+model MembershipBuildingAccess {
+  id             String     @id @default(uuid()) @db.Uuid
+  organizationId String     @db.Uuid
+  membershipId   String     @db.Uuid
+  buildingId     String     @db.Uuid
+  validFrom      DateTime   @default(now()) @db.Timestamptz(3)
+  validUntil     DateTime?  @db.Timestamptz(3)
+  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
+  membership     Membership @relation(fields: [membershipId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  building       Building   @relation(fields: [buildingId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@unique([organizationId, membershipId, buildingId])
+  @@index([organizationId, buildingId, validUntil])
+}
+
+model Occupancy {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  apartmentId    String       @db.Uuid
+  membershipId   String       @db.Uuid
+  startsOn       DateTime     @db.Date
+  endsOn         DateTime?    @db.Date
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  apartment      Apartment    @relation(fields: [apartmentId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  membership     Membership   @relation(fields: [membershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  @@index([organizationId, apartmentId, startsOn])
+  @@index([organizationId, membershipId, endsOn])
+}
+
+model Vendor {
+  id                  String                     @id @default(uuid()) @db.Uuid
+  organizationId      String                     @db.Uuid
+  legalName           String                     @db.VarChar(200)
+  tradingName         String?                    @db.VarChar(200)
+  registrationNumber  String?                    @db.VarChar(80)
+  taxId               String?                    @db.VarChar(80)
+  email               String?                    @db.VarChar(320)
+  phone               String?                    @db.VarChar(40)
+  status              VendorStatus               @default(DRAFT)
+  tags                String[]
+  internalNotes       String?                    @db.VarChar(4000)
+  version             Int                        @default(1)
+  createdAt           DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                   @updatedAt @db.Timestamptz(3)
+  organization        Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contacts            VendorContact[]
+  buildingLinks       VendorBuilding[]
+  bankAccountVersions VendorBankAccountVersion[]
+  contracts           Contract[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId, status, legalName])
+  @@index([organizationId, registrationNumber])
+}
+
+model VendorContact {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @db.Uuid
+  vendorId       String    @db.Uuid
+  name           String    @db.VarChar(160)
+  role           String?   @db.VarChar(120)
+  email          String?   @db.VarChar(320)
+  phone          String?   @db.VarChar(40)
+  isVerified     Boolean   @default(false)
+  verifiedAt     DateTime? @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+  vendor         Vendor    @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@index([organizationId, vendorId, isVerified])
+}
+
+model VendorBuilding {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  vendorId       String   @db.Uuid
+  buildingId     String   @db.Uuid
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  vendor         Vendor   @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  building       Building @relation(fields: [buildingId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@unique([organizationId, vendorId, buildingId])
+  @@index([organizationId, buildingId])
+}
+
+model VendorBankAccountVersion {
+  id                    String                          @id @default(uuid()) @db.Uuid
+  organizationId        String                          @db.Uuid
+  vendorId              String                          @db.Uuid
+  versionNumber         Int
+  countryCode           String                          @db.Char(2)
+  encryptedAccount      String                          @db.Text
+  encryptionIv          String                          @db.VarChar(64)
+  encryptionTag         String                          @db.VarChar(64)
+  encryptionKeyId       String                          @db.VarChar(80)
+  accountFingerprint    String                          @db.VarChar(128)
+  maskedAccount         String                          @db.VarChar(80)
+  maskedAccountHolder   String                          @db.VarChar(200)
+  createdByMembershipId String                          @db.Uuid
+  createdAt             DateTime                        @default(now()) @db.Timestamptz(3)
+  vendor                Vendor                          @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdByMembership   Membership                      @relation("BankAccountVersionCreator", fields: [createdByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  verifications         VendorBankAccountVerification[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, vendorId, versionNumber])
+  @@index([organizationId, vendorId, createdAt])
+  @@index([organizationId, accountFingerprint])
+}
+
+model VendorBankAccountVerification {
+  id                     String                        @id @default(uuid()) @db.Uuid
+  organizationId         String                        @db.Uuid
+  bankAccountVersionId   String                        @db.Uuid
+  status                 BankAccountVerificationStatus
+  evidenceReference      String?                       @db.VarChar(500)
+  reason                 String?                       @db.VarChar(500)
+  verifiedByMembershipId String                        @db.Uuid
+  createdAt              DateTime                      @default(now()) @db.Timestamptz(3)
+  bankAccountVersion     VendorBankAccountVersion      @relation(fields: [bankAccountVersionId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  verifiedByMembership   Membership                    @relation("BankAccountVerifier", fields: [verifiedByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  @@index([organizationId, bankAccountVersionId, createdAt])
+}
+
+model Contract {
+  id                String             @id @default(uuid()) @db.Uuid
+  organizationId    String             @db.Uuid
+  vendorId          String             @db.Uuid
+  reference         String             @db.VarChar(80)
+  title             String             @db.VarChar(200)
+  serviceCategory   String             @db.VarChar(120)
+  valueLimit        Decimal?           @db.Decimal(19, 2)
+  currency          String?            @db.Char(3)
+  startsOn          DateTime           @db.Date
+  endsOn            DateTime?          @db.Date
+  status            ContractStatus     @default(DRAFT)
+  documentReference String?            @db.VarChar(500)
+  version           Int                @default(1)
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(3)
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vendor            Vendor             @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  buildingLinks     ContractBuilding[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, reference])
+  @@index([organizationId, status, endsOn])
+  @@index([organizationId, vendorId])
+}
+
+model ContractBuilding {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  contractId     String   @db.Uuid
+  buildingId     String   @db.Uuid
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  contract       Contract @relation(fields: [contractId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  building       Building @relation(fields: [buildingId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@unique([organizationId, contractId, buildingId])
+  @@index([organizationId, buildingId])
+}
+
+model AuditEvent {
+  id                String       @id @default(uuid()) @db.Uuid
+  organizationId    String       @db.Uuid
+  actorMembershipId String?      @db.Uuid
+  action            String       @db.VarChar(120)
+  entityType        String       @db.VarChar(80)
+  entityId          String       @db.Uuid
+  before            Json?
+  after             Json?
+  reason            String?      @db.VarChar(500)
+  correlationId     String       @db.Uuid
+  createdAt         DateTime     @default(now()) @db.Timestamptz(3)
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actorMembership   Membership?  @relation(fields: [actorMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  @@index([organizationId, entityType, entityId, createdAt])
+  @@index([organizationId, createdAt])
 }

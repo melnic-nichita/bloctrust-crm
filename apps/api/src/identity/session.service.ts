@@ -121,6 +121,7 @@ export class SessionService {
 
     return {
       userId: session.userId,
+      membershipId: membership.id,
       sessionId: session.id,
       organizationId: session.organizationId,
       role: membership.role,

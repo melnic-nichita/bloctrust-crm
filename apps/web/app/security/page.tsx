@@ -6,6 +6,7 @@ import type {
   PublicKeyCredentialRequestOptionsJSON,
 } from '@simplewebauthn/browser';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { apiRequest } from '../lib/api';
 
@@ -84,7 +85,7 @@ export default function SecurityPage() {
     <main className="security-shell">
       <nav aria-label="Security navigation">
         <span className="brand">BLOCTRUST</span>
-        <span className="milestone">Identity boundary 0.2.0</span>
+        <span className="milestone">Security center · 0.3.0</span>
       </nav>
       <section className="security-grid">
         <div>
@@ -108,6 +109,9 @@ export default function SecurityPage() {
           {message ? <p className="form-success">{message}</p> : null}
           {error ? <p className="form-error">{error}</p> : null}
           <div className="button-row">
+            <Link className="button-link" href="/crm">
+              Open CRM
+            </Link>
             <button disabled={pending} onClick={() => void perform(registerPasskey)}>
               Register passkey
             </button>

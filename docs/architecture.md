@@ -77,3 +77,14 @@ Direct cross-module database manipulation is prohibited. Cross-module behavior u
 
 System-scoped identity queries use the migration owner connection only inside the identity module.
 Tenant-owned reads and writes must use `TenantDatabaseService.run`.
+
+## CRM relationship and evidence boundary
+
+Buildings, apartments, occupancies, membership grants, vendors, contracts, bank evidence, and
+audit events all carry `organizationId`. Relations between tenant resources use composite foreign
+keys `(id, organizationId)` in addition to RLS, preventing cross-tenant graph edges at the database
+constraint layer.
+
+The CRM module owns building authorization, Vendor Trust Passports, contracts, cursor search,
+optimistic writes, dashboards, and redacted audit writes. Full bank fields cross a separate
+application-encryption boundary and never enter the default serialization shape. See ADR-009.

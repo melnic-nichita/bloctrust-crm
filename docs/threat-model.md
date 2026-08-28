@@ -1,6 +1,6 @@
 # Threat model
 
-Status: initial design baseline for Milestone 0.1. Revisit at every phase exit.
+Status: reviewed at the Milestone 0.3 phase exit.
 
 ## Protected assets
 
@@ -26,9 +26,9 @@ Status: initial design baseline for Milestone 0.1. Revisit at every phase exit.
 | S-03 | Rotated refresh token replay              | Cookie session       | One-time token records and family-wide revocation                      | Replay the consumed token and inspect the family  | Identity     | Integration proof pending |
 | S-02 | Spoofed/replayed webhook                  | Integration endpoint | HMAC, timestamp window, nonce, idempotency key                         | Invalid signature and duplicate payload           | Integrations | Planned                   |
 | T-01 | Invoice or approval edited after decision | Financial state      | Version checks, state machine, new approval version                    | Approve stale entity version                      | Approvals    | Planned                   |
-| T-02 | Audit row modified                        | Audit evidence       | Append-only permissions and hash chain                                 | Attempt update/delete and chain verification      | Audit        | Planned                   |
-| R-01 | Administrator denies sensitive action     | Approval/audit       | Actor, correlation, causation, timestamp, reason, evidence hash        | Reconstruct hero workflow                         | Audit        | Planned                   |
-| I-01 | Cross-tenant IDOR                         | All tenant records   | Organization scope, resource policy, PostgreSQL RLS                    | Read/update organization rows as Tenant B         | Platform     | Integration proof pending |
+| T-02 | Audit row modified                        | Audit evidence       | Append-only permissions and database trigger                           | Attempt update/delete                             | Audit        | CRM proof implemented     |
+| R-01 | Administrator denies sensitive action     | Approval/audit       | Actor, correlation, timestamp, reason, and redacted evidence           | Reconstruct bank reveal                           | Audit        | CRM proof implemented     |
+| I-01 | Cross-tenant IDOR                         | All tenant records   | Organization scope, composite tenant FKs, resource policy, RLS         | Read/link/search CRM rows as Tenant B             | Platform     | CRM proof implemented     |
 | I-04 | Cross-site cookie mutation                | Browser/API boundary | Trusted Origin plus double-submit CSRF token and SameSite cookies      | Cross-origin and mismatched-token requests        | Identity     | Verified                  |
 | I-02 | Document/object-key disclosure            | Object storage       | Random keys, fresh authorization, short signed URLs                    | Guess key and reuse expired URL                   | Documents    | Planned                   |
 | I-03 | Sensitive data in logs/export             | Telemetry/export     | Field redaction, masked defaults, CSV hardening                        | Log capture and formula-injection fixtures        | Platform     | Planned                   |
@@ -36,6 +36,8 @@ Status: initial design baseline for Milestone 0.1. Revisit at every phase exit.
 | D-02 | Queue retry storm                         | Redis/worker         | Bounded retry, exponential backoff, dead-letter view                   | Kill worker mid-job                               | Workflows    | Planned                   |
 | E-01 | Self-approval or duplicate approver       | High-risk invoice    | Eligible-user policy, separation of duties, unique decision constraint | Initiator and repeated-user decisions             | Approvals    | Planned                   |
 | E-02 | Realtime room escalation                  | Building channel     | Reauthorize socket, room join, and mutation                            | Join another building room                        | Community    | Planned                   |
+| I-05 | Full bank data exposed by ordinary read   | Vendor bank evidence | AES-256-GCM, explicit safe selects, step-up reveal, reasoned audit     | Inspect list response and reveal audit            | Vendors      | Verified                  |
+| T-03 | Concurrent CRM edit silently overwritten  | Vendor/contract      | If-Match version and atomic conditional update                         | Submit a stale entity version                     | CRM          | Verified                  |
 
 ## Security assumptions
 
