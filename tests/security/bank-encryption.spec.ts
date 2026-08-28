@@ -42,4 +42,27 @@ describe('bank-account field encryption', () => {
       });
     }
   });
+
+  it('rejects a truncated GCM authentication tag', () => {
+    const service = new BankEncryptionService();
+    const encrypted = service.encrypt('organization-a', 'vendor-a', {
+      accountNumber: 'MD24AG000000000000000001',
+      accountHolder: 'Synthetic Vendor SRL',
+    });
+    const truncatedTag = Buffer.from(encrypted.encryptionTag, 'base64')
+      .subarray(0, 12)
+      .toString('base64');
+
+    try {
+      service.decrypt('organization-a', 'vendor-a', {
+        ...encrypted,
+        encryptionTag: truncatedTag,
+      });
+      throw new Error('Expected authenticated decryption to fail.');
+    } catch (error) {
+      expect((error as { getResponse(): object }).getResponse()).toMatchObject({
+        code: 'FIELD_DECRYPTION_FAILED',
+      });
+    }
+  });
 });

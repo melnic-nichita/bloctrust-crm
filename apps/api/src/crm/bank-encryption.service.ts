@@ -21,6 +21,9 @@ type StoredBankAccount = Readonly<{
   encryptionKeyId: string;
 }>;
 
+const GCM_IV_LENGTH_BYTES = 12;
+const GCM_AUTH_TAG_LENGTH_BYTES = 16;
+
 @Injectable()
 export class BankEncryptionService {
   private readonly keyId: string;
@@ -66,8 +69,10 @@ export class BankEncryptionService {
       }),
       'utf8',
     );
-    const iv = randomBytes(12);
-    const cipher = createCipheriv('aes-256-gcm', this.encryptionKey, iv);
+    const iv = randomBytes(GCM_IV_LENGTH_BYTES);
+    const cipher = createCipheriv('aes-256-gcm', this.encryptionKey, iv, {
+      authTagLength: GCM_AUTH_TAG_LENGTH_BYTES,
+    });
     cipher.setAAD(this.aad(organizationId, vendorId));
     const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
 
@@ -95,13 +100,21 @@ export class BankEncryptionService {
     }
 
     try {
-      const decipher = createDecipheriv(
-        'aes-256-gcm',
-        this.encryptionKey,
-        Buffer.from(stored.encryptionIv, 'base64'),
-      );
+      const iv = Buffer.from(stored.encryptionIv, 'base64');
+      const authenticationTag = Buffer.from(stored.encryptionTag, 'base64');
+
+      if (
+        iv.length !== GCM_IV_LENGTH_BYTES ||
+        authenticationTag.length !== GCM_AUTH_TAG_LENGTH_BYTES
+      ) {
+        throw new Error('Invalid AES-GCM parameters.');
+      }
+
+      const decipher = createDecipheriv('aes-256-gcm', this.encryptionKey, iv, {
+        authTagLength: GCM_AUTH_TAG_LENGTH_BYTES,
+      });
       decipher.setAAD(this.aad(organizationId, vendorId));
-      decipher.setAuthTag(Buffer.from(stored.encryptionTag, 'base64'));
+      decipher.setAuthTag(authenticationTag);
       const decrypted = Buffer.concat([
         decipher.update(Buffer.from(stored.encryptedAccount, 'base64')),
         decipher.final(),

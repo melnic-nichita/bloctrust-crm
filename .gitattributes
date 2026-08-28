@@ -1,0 +1,16 @@
+# Keep text files identical across Windows and Linux CI runners.
+* text=auto eol=lf
+
+# Preserve native line endings for Windows command scripts.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Never apply line-ending conversion to binary artifacts.
+*.gif binary
+*.ico binary
+*.jpeg binary
+*.jpg binary
+*.pdf binary
+*.png binary
+*.webp binary
+*.zip binary
