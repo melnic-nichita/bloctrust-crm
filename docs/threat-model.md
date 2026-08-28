@@ -20,20 +20,22 @@ Status: initial design baseline for Milestone 0.1. Revisit at every phase exit.
 
 ## STRIDE register
 
-| ID   | Threat                                    | Boundary/asset       | Control                                                                | Required verification                             | Owner        | Status  |
-| ---- | ----------------------------------------- | -------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | ------------ | ------- |
-| S-01 | Forged role or step-up claim              | API authorization    | Load membership and recent verification server-side; DTO allowlist     | Submit admin/verified fields from a resident      | Identity     | Planned |
-| S-02 | Spoofed/replayed webhook                  | Integration endpoint | HMAC, timestamp window, nonce, idempotency key                         | Invalid signature and duplicate payload           | Integrations | Planned |
-| T-01 | Invoice or approval edited after decision | Financial state      | Version checks, state machine, new approval version                    | Approve stale entity version                      | Approvals    | Planned |
-| T-02 | Audit row modified                        | Audit evidence       | Append-only permissions and hash chain                                 | Attempt update/delete and chain verification      | Audit        | Planned |
-| R-01 | Administrator denies sensitive action     | Approval/audit       | Actor, correlation, causation, timestamp, reason, evidence hash        | Reconstruct hero workflow                         | Audit        | Planned |
-| I-01 | Cross-tenant IDOR                         | All tenant records   | Organization scope, resource policy, PostgreSQL RLS                    | Read/update every route as Tenant B               | Platform     | Planned |
-| I-02 | Document/object-key disclosure            | Object storage       | Random keys, fresh authorization, short signed URLs                    | Guess key and reuse expired URL                   | Documents    | Planned |
-| I-03 | Sensitive data in logs/export             | Telemetry/export     | Field redaction, masked defaults, CSV hardening                        | Log capture and formula-injection fixtures        | Platform     | Planned |
-| D-01 | Oversized/malicious upload                | API/worker/storage   | Stream limits, signature checks, quarantine, ClamAV                    | EICAR, polyglot, double extension, oversized file | Documents    | Planned |
-| D-02 | Queue retry storm                         | Redis/worker         | Bounded retry, exponential backoff, dead-letter view                   | Kill worker mid-job                               | Workflows    | Planned |
-| E-01 | Self-approval or duplicate approver       | High-risk invoice    | Eligible-user policy, separation of duties, unique decision constraint | Initiator and repeated-user decisions             | Approvals    | Planned |
-| E-02 | Realtime room escalation                  | Building channel     | Reauthorize socket, room join, and mutation                            | Join another building room                        | Community    | Planned |
+| ID   | Threat                                    | Boundary/asset       | Control                                                                | Required verification                             | Owner        | Status                    |
+| ---- | ----------------------------------------- | -------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | ------------ | ------------------------- |
+| S-01 | Forged role or step-up claim              | API authorization    | Load membership and recent verification server-side; DTO allowlist     | Submit admin/verified fields from a resident      | Identity     | Verified                  |
+| S-03 | Rotated refresh token replay              | Cookie session       | One-time token records and family-wide revocation                      | Replay the consumed token and inspect the family  | Identity     | Integration proof pending |
+| S-02 | Spoofed/replayed webhook                  | Integration endpoint | HMAC, timestamp window, nonce, idempotency key                         | Invalid signature and duplicate payload           | Integrations | Planned                   |
+| T-01 | Invoice or approval edited after decision | Financial state      | Version checks, state machine, new approval version                    | Approve stale entity version                      | Approvals    | Planned                   |
+| T-02 | Audit row modified                        | Audit evidence       | Append-only permissions and hash chain                                 | Attempt update/delete and chain verification      | Audit        | Planned                   |
+| R-01 | Administrator denies sensitive action     | Approval/audit       | Actor, correlation, causation, timestamp, reason, evidence hash        | Reconstruct hero workflow                         | Audit        | Planned                   |
+| I-01 | Cross-tenant IDOR                         | All tenant records   | Organization scope, resource policy, PostgreSQL RLS                    | Read/update organization rows as Tenant B         | Platform     | Integration proof pending |
+| I-04 | Cross-site cookie mutation                | Browser/API boundary | Trusted Origin plus double-submit CSRF token and SameSite cookies      | Cross-origin and mismatched-token requests        | Identity     | Verified                  |
+| I-02 | Document/object-key disclosure            | Object storage       | Random keys, fresh authorization, short signed URLs                    | Guess key and reuse expired URL                   | Documents    | Planned                   |
+| I-03 | Sensitive data in logs/export             | Telemetry/export     | Field redaction, masked defaults, CSV hardening                        | Log capture and formula-injection fixtures        | Platform     | Planned                   |
+| D-01 | Oversized/malicious upload                | API/worker/storage   | Stream limits, signature checks, quarantine, ClamAV                    | EICAR, polyglot, double extension, oversized file | Documents    | Planned                   |
+| D-02 | Queue retry storm                         | Redis/worker         | Bounded retry, exponential backoff, dead-letter view                   | Kill worker mid-job                               | Workflows    | Planned                   |
+| E-01 | Self-approval or duplicate approver       | High-risk invoice    | Eligible-user policy, separation of duties, unique decision constraint | Initiator and repeated-user decisions             | Approvals    | Planned                   |
+| E-02 | Realtime room escalation                  | Building channel     | Reauthorize socket, room join, and mutation                            | Join another building room                        | Community    | Planned                   |
 
 ## Security assumptions
 

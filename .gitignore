@@ -6,7 +6,10 @@ coverage/
 .env.*
 !.env.example
 *.log
+*.tsbuildinfo
 .DS_Store
 tmp/
 storage/
 prisma/dev.db
+generated/prisma/
+apps/api/src/generated/

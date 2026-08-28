@@ -1,8 +1,10 @@
+import Link from 'next/link';
+
 const foundations = [
-  'Tenant isolation by policy and PostgreSQL RLS',
-  'Quarantined document processing',
-  'Explainable invoice risk holds',
-  'Two-person passkey approval',
+  'Argon2id with private breach screening',
+  'Rotated cookie sessions with replay detection',
+  'Passkey registration and recent step-up',
+  'Server-side roles plus PostgreSQL RLS',
 ];
 
 export default function HomePage() {
@@ -10,7 +12,7 @@ export default function HomePage() {
     <main>
       <nav aria-label="Primary navigation">
         <span className="brand">BLOCTRUST</span>
-        <span className="milestone">Foundation 0.1.0</span>
+        <span className="milestone">Identity boundary 0.2.0</span>
       </nav>
 
       <section className="hero" aria-labelledby="hero-heading">
@@ -20,12 +22,20 @@ export default function HomePage() {
           BlocTrust connects residents, vendors, contracts, invoices, and decisions while making
           risky administrative actions visible and independently verifiable.
         </p>
+        <div className="hero-actions">
+          <Link className="button-link" href="/onboarding">
+            Create organization
+          </Link>
+          <Link className="text-link" href="/login">
+            Sign in
+          </Link>
+        </div>
       </section>
 
       <section className="foundation" aria-labelledby="foundation-heading">
         <div>
-          <p className="eyebrow">FIRST VERTICAL SLICE</p>
-          <h2 id="foundation-heading">Changed bank account → risk hold → dual approval</h2>
+          <p className="eyebrow">MILESTONE 0.2 COMPLETE</p>
+          <h2 id="foundation-heading">A tenant boundary attackers must cross twice.</h2>
         </div>
         <ol>
           {foundations.map((item, index) => (

@@ -126,9 +126,155 @@ li:last-child {
   border-bottom: 1px solid rgba(17, 25, 20, 0.18);
 }
 
+.hero-actions,
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 32px;
+}
+
+.button-link,
+button {
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--ink);
+  color: white;
+  padding: 13px 20px;
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.text-link,
+.form-footnote a {
+  color: var(--ink);
+  font-weight: 750;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+button.secondary {
+  background: var(--signal);
+  color: var(--ink);
+}
+
+button.quiet {
+  border-color: rgba(17, 25, 20, 0.28);
+  background: transparent;
+  color: var(--ink);
+}
+
+.auth-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 32px;
+}
+
+.auth-card {
+  width: min(100%, 720px);
+  border-radius: 28px;
+  background: var(--panel);
+  padding: clamp(28px, 6vw, 64px);
+}
+
+.auth-card h1,
+.security-grid h1 {
+  font-size: clamp(2.8rem, 7vw, 6rem);
+}
+
+form {
+  display: grid;
+  gap: 18px;
+  margin-top: 36px;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+input {
+  width: 100%;
+  border: 1px solid rgba(17, 25, 20, 0.28);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  padding: 13px 14px;
+  font: inherit;
+}
+
+input:focus {
+  outline: 3px solid rgba(217, 255, 79, 0.8);
+  outline-offset: 1px;
+}
+
+.form-error,
+.form-success,
+.form-footnote {
+  max-width: none;
+  font-size: 0.9rem;
+}
+
+.form-error {
+  color: #9f2525;
+}
+
+.form-success {
+  color: #2e641f;
+}
+
+.security-shell {
+  min-height: 100vh;
+  padding: 24px clamp(24px, 5vw, 80px) 64px;
+}
+
+.security-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 48px;
+  align-items: center;
+  min-height: 80vh;
+}
+
+.security-panel {
+  border-radius: 28px;
+  background: var(--panel);
+  padding: clamp(26px, 5vw, 48px);
+}
+
+.security-panel > p {
+  display: flex;
+  max-width: none;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid rgba(17, 25, 20, 0.16);
+  padding-bottom: 16px;
+}
+
+.security-panel span {
+  color: var(--muted);
+  text-align: right;
+}
+
 @media (max-width: 760px) {
   .foundation {
     grid-template-columns: 1fr;
+  }
+
+  .security-grid {
+    grid-template-columns: 1fr;
+    padding-top: 72px;
   }
 
   .milestone {
