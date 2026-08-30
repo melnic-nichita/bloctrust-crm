@@ -31,9 +31,16 @@
 - [x] Cross-tenant CRM, immutable-bank, reveal-audit, and stale-write tests.
 - [ ] Pass the Docker migration and PostgreSQL integration-test rehearsal for the 0.3 migration.
 
-## Milestone 0.4 - hero vertical slice
+## Milestone 0.4 - secure invoice vertical slice
 
-- [ ] Quarantined upload, malware scan, fingerprint, and OCR draft.
+- [x] Invoice, line, document, and durable processing-state models with RLS.
+- [x] Bounded multipart upload with extension, MIME, and signature controls.
+- [x] Random-key quarantine, ClamAV gate, fingerprint, exact-duplicate detection, and OCR suggestions.
+- [x] Reviewer workspace and audited, short-lived authorized document downloads.
+- [x] Cross-tenant invoice/document, suggestion-separation, and filename-independent duplicate tests.
+
+## Milestone 0.5 - risk and approvals
+
 - [ ] Explainable risk rules and changed-account hold.
 - [ ] Dual passkey approval with separation of duties.
 - [ ] Transactional outbox, idempotent notification, and audit timeline.

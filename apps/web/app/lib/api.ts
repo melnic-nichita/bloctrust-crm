@@ -22,7 +22,9 @@ export async function apiRequest<T>(
   const csrfToken = readCookie('bt_csrf', '__Host-bt_csrf');
   const headers = new Headers(init.headers);
 
-  if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && csrfToken) {
     headers.set('X-CSRF-Token', csrfToken);
   }
@@ -48,4 +50,8 @@ export async function apiRequest<T>(
   }
 
   return (await response.json()) as T;
+}
+
+export function apiUrl(path: string): string {
+  return `${API_URL}${path}`;
 }

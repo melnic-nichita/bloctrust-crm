@@ -103,6 +103,9 @@ importers:
       '@simplewebauthn/server':
         specifier: 13.3.2
         version: 13.3.2
+      bullmq:
+        specifier: 6.2.1
+        version: 6.2.1(ioredis@5.11.1)(pg@8.23.0)
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -118,6 +121,9 @@ importers:
       ioredis:
         specifier: ^5.7.0
         version: 5.11.1
+      multer:
+        specifier: 2.2.0
+        version: 2.2.0
       pg:
         specifier: ^8.16.3
         version: 8.23.0
@@ -168,6 +174,13 @@ importers:
       ioredis:
         specifier: ^5.7.0
         version: 5.11.1
+      pg:
+        specifier: ^8.16.3
+        version: 8.23.0
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.15.5
+        version: 8.23.1
 
   packages/config: {}
 

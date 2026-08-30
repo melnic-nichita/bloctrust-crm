@@ -37,4 +37,10 @@ Every new sensitive field requires:
 - Passkey challenges expire after five minutes and are retained only long enough to investigate
   challenge replay and authentication abuse.
 - Invoice/document bytes never enter logs, notifications, or telemetry.
+- Original filenames, OCR text, and extracted invoice values are Confidential. Object keys and
+  document contents are Restricted and are omitted from ordinary API serialization.
+- Quarantined objects are accessible only to the API/worker service identity. Approved bytes still
+  require a tenant-scoped role check, a short-lived token, and an append-only access event.
+- OCR suggestions are evidence, not authoritative financial fields, and must be retained or
+  deleted with their source document under the tenant's configured invoice policy.
 - Deactivated users retain pseudonymized references required for audit evidence.

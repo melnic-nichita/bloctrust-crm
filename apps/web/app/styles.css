@@ -25,6 +25,117 @@ body {
   color: var(--ink);
 }
 
+.invoice-shell {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.invoice-header {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr;
+  gap: 32px;
+  align-items: end;
+  padding: 56px 0 32px;
+}
+.invoice-header h1 {
+  font-size: clamp(3rem, 6vw, 6rem);
+}
+.upload-card,
+.review-panel,
+.invoice-list,
+.document-panel {
+  background: var(--panel);
+  border: 1px solid rgba(17, 25, 20, 0.15);
+  border-radius: 20px;
+  padding: 22px;
+}
+.upload-card,
+.review-panel {
+  display: grid;
+  gap: 16px;
+}
+.upload-card label,
+.review-panel label {
+  display: grid;
+  gap: 7px;
+  font-weight: 700;
+}
+.upload-card input,
+.review-panel input {
+  width: 100%;
+  border: 1px solid rgba(17, 25, 20, 0.3);
+  border-radius: 10px;
+  background: white;
+  padding: 11px;
+}
+.invoice-workspace {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.65fr) minmax(360px, 1.5fr) minmax(280px, 0.85fr);
+  gap: 18px;
+  min-height: 620px;
+}
+.invoice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.invoice-list button {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  background: transparent;
+  border: 1px solid rgba(17, 25, 20, 0.14);
+  border-radius: 12px;
+  padding: 14px;
+}
+.invoice-list button.selected {
+  background: var(--signal);
+}
+.invoice-list span,
+.review-panel small,
+.document-placeholder span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.document-panel {
+  display: grid;
+  padding: 8px;
+  overflow: hidden;
+}
+.document-panel iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 580px;
+  border: 0;
+  border-radius: 14px;
+  background: white;
+}
+.document-placeholder {
+  display: grid;
+  place-content: center;
+  gap: 14px;
+  text-align: center;
+}
+.notice {
+  max-width: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.notice.success {
+  background: #dff7d6;
+}
+.notice.error {
+  background: #ffe2dc;
+}
+@media (max-width: 980px) {
+  .invoice-header,
+  .invoice-workspace {
+    grid-template-columns: 1fr;
+  }
+  .document-panel {
+    min-height: 520px;
+  }
+}
+
 main {
   min-height: 100vh;
   padding: 24px clamp(24px, 5vw, 80px) 64px;

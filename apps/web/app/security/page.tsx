@@ -85,7 +85,7 @@ export default function SecurityPage() {
     <main className="security-shell">
       <nav aria-label="Security navigation">
         <span className="brand">BLOCTRUST</span>
-        <span className="milestone">Security center · 0.3.0</span>
+        <span className="milestone">Security center · 0.4.0</span>
       </nav>
       <section className="security-grid">
         <div>

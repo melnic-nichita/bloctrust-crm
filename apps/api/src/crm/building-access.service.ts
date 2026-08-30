@@ -13,29 +13,29 @@ export class BuildingAccessService {
     if (auth.role === MembershipRole.OWNER || auth.role === MembershipRole.AUDITOR) return;
 
     const now = new Date();
-    const [grant, occupancy] = await Promise.all([
-      transaction.membershipBuildingAccess.findFirst({
-        where: {
-          organizationId: auth.organizationId,
-          buildingId,
-          membershipId: auth.membershipId,
-          validFrom: { lte: now },
-          OR: [{ validUntil: null }, { validUntil: { gt: now } }],
-        },
-        select: { id: true },
-      }),
-      transaction.occupancy.findFirst({
-        where: {
-          organizationId: auth.organizationId,
-          membershipId: auth.membershipId,
-          apartment: { buildingId },
-          startsOn: { lte: now },
-          OR: [{ endsOn: null }, { endsOn: { gte: now } }],
-        },
-        select: { id: true },
-      }),
-    ]);
-    if (grant || occupancy) return;
+    const grant = await transaction.membershipBuildingAccess.findFirst({
+      where: {
+        organizationId: auth.organizationId,
+        buildingId,
+        membershipId: auth.membershipId,
+        validFrom: { lte: now },
+        OR: [{ validUntil: null }, { validUntil: { gt: now } }],
+      },
+      select: { id: true },
+    });
+    if (grant) return;
+
+    const occupancy = await transaction.occupancy.findFirst({
+      where: {
+        organizationId: auth.organizationId,
+        membershipId: auth.membershipId,
+        apartment: { buildingId },
+        startsOn: { lte: now },
+        OR: [{ endsOn: null }, { endsOn: { gte: now } }],
+      },
+      select: { id: true },
+    });
+    if (occupancy) return;
 
     throw new NotFoundException({
       type: 'about:blank',

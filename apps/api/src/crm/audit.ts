@@ -5,7 +5,7 @@ type AuditInput = Readonly<{
   organizationId: string;
   actorMembershipId: string;
   action: string;
-  entityType: 'VENDOR' | 'CONTRACT' | 'BANK_ACCOUNT';
+  entityType: 'VENDOR' | 'CONTRACT' | 'BANK_ACCOUNT' | 'INVOICE' | 'DOCUMENT';
   entityId: string;
   before?: object;
   after?: object;

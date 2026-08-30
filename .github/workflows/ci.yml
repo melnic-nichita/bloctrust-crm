@@ -45,10 +45,22 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      clamav:
+        image: clamav/clamav:1.4.6_base-debian13-slim
+        ports:
+          - 3310:3310
+        options: >-
+          --health-cmd "clamdscan --ping 1"
+          --health-interval 15s
+          --health-timeout 10s
+          --health-retries 12
     env:
       DATABASE_URL: postgresql://bloctrust:bloctrust_test@localhost:5432/bloctrust_test?schema=public
       FIELD_ENCRYPTION_KEY: ci_only_field_encryption_key_with_at_least_32_bytes
       FIELD_ENCRYPTION_KEY_ID: ci-v1
+      CLAMAV_HOST: localhost
+      CLAMAV_PORT: 3310
+      RUN_CLAMAV_INTEGRATION: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
@@ -62,6 +74,7 @@ jobs:
       - run: pnpm db:deploy
       - run: pnpm db:seed
       - run: pnpm test:security:integration
+      - run: pnpm test:security:clamav
 
   secret-scan:
     runs-on: ubuntu-latest
