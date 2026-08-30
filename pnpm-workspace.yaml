@@ -12,6 +12,9 @@ minimumReleaseAgeExclude:
   - sharp@0.35.4
   - '@next/swc-*'
   - '@img/sharp-*'
+  # Existing locked queue and glob releases, reviewed for the 0.4 reproducible build.
+  - bullmq@6.2.1
+  - picomatch@4.0.7
 trustPolicy: no-downgrade
 trustPolicyExclude:
   # Existing locked watcher release; keep this exception exact and review it on upgrades.

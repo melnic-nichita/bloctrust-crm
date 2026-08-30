@@ -71,6 +71,34 @@ services:
       - '8025:8025'
     restart: unless-stopped
 
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://bloctrust:bloctrust_dev@postgres:5432/bloctrust?schema=public
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: bloctrust_dev
+      MINIO_SECRET_KEY: replace_for_non_local_use
+      MINIO_QUARANTINE_BUCKET: quarantine
+      MINIO_APPROVED_BUCKET: approved
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      CLAMAV_TIMEOUT_MS: 60000
+      OCR_LANGUAGES: eng
+      INVOICE_WORKER_CONCURRENCY: 2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

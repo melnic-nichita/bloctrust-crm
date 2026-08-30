@@ -1,6 +1,6 @@
 {
   "name": "bloctrust-crm",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "packageManager": "pnpm@10.26.1",
   "engines": {
@@ -8,23 +8,25 @@
     "pnpm": ">=10.26.1 <11"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @bloctrust/api --filter @bloctrust/web --filter @bloctrust/worker dev",
+    "dev": "pnpm --parallel --filter @bloctrust/api --filter @bloctrust/web dev",
+    "dev:worker": "pnpm --filter @bloctrust/worker dev",
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test && pnpm test:security:unit",
     "test:security:unit": "vitest run tests/security --exclude \"**/*.integration.spec.ts\"",
-    "test:security:integration": "vitest run tests/security/tenant-boundary.integration.spec.ts tests/security/session-replay.integration.spec.ts tests/security/crm-core.integration.spec.ts",
+    "test:security:integration": "vitest run tests/security/tenant-boundary.integration.spec.ts tests/security/session-replay.integration.spec.ts tests/security/crm-core.integration.spec.ts tests/security/invoice-pipeline.integration.spec.ts",
+    "test:security:clamav": "vitest run tests/security/clamav.integration.spec.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "validate:foundation": "node scripts/validate-foundation.mjs",
-    "validate:milestone": "node scripts/validate-milestone-0.3.mjs",
+    "validate:milestone": "node scripts/validate-milestone-0.4.mjs",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "infra:up": "docker compose up -d postgres redis minio clamav mailpit",
+    "infra:up": "docker compose up -d --build postgres redis minio clamav mailpit worker",
     "infra:down": "docker compose down"
   },
   "devDependencies": {

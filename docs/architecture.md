@@ -88,3 +88,13 @@ constraint layer.
 The CRM module owns building authorization, Vendor Trust Passports, contracts, cursor search,
 optimistic writes, dashboards, and redacted audit writes. Full bank fields cross a separate
 application-encryption boundary and never enter the default serialization shape. See ADR-009.
+
+## Secure invoice document boundary
+
+The API streams bounded multipart input to a private temporary file, validates the filename,
+declared type, extension, and magic bytes, then uploads it under a random quarantine key. A
+deterministic BullMQ job moves durable PostgreSQL progress through scanning, parsing, and review.
+Only the worker may promote a ClamAV-clean object to approved storage. It fingerprints the bytes
+before tenant-scoped duplicate lookup and stores Tesseract fields as suggestions separate from the
+invoice draft. The browser never receives object keys; audited API downloads require a fresh
+tenant lookup and a document-bound 60-second token. See ADR-010.

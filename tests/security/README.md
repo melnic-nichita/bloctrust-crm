@@ -21,10 +21,19 @@ Milestone 0.3 automated suites:
 - `audit-redaction.spec.ts` - restricted fields excluded from vendor/contract snapshots.
 - `concurrency.spec.ts` - `If-Match` parsing and HTTP 409 stale-write behavior.
 
+Milestone 0.4 automated suites:
+
+- `document-validation.spec.ts` - signatures, MIME/extension disagreement, double extensions,
+  upload ceiling, OCR suggestion separation, and signed-download tenant binding.
+- `invoice-pipeline.integration.spec.ts` - invoice/document RLS, suggestion separation, and
+  filename-independent tenant-scoped fingerprints.
+- `clamav.integration.spec.ts` - opt-in live ClamAV `INSTREAM` rehearsal using a runtime-assembled,
+  in-memory harmless antivirus test signature.
+
 Future suites:
 
-- `uploads` - EICAR, oversized, double-extension, signature mismatch, and key guessing.
 - `approval-abuse` - self-approval, stale versions, duplicate decisions, and webhook replay.
 - `realtime` - unauthorized channel joins and message-object reassignment.
 
-Do not place active credentials or unencoded malware in fixtures. The EICAR string belongs only in a purpose-specific fixture and its scanner assertion.
+Do not place active credentials or malware fixtures in the repository. The harmless antivirus test
+signature is assembled only at runtime, held in memory, and sent directly to ClamAV.

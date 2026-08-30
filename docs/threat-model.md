@@ -1,6 +1,6 @@
 # Threat model
 
-Status: reviewed at the Milestone 0.3 phase exit.
+Status: reviewed at the Milestone 0.4 phase exit.
 
 ## Protected assets
 
@@ -30,10 +30,10 @@ Status: reviewed at the Milestone 0.3 phase exit.
 | R-01 | Administrator denies sensitive action     | Approval/audit       | Actor, correlation, timestamp, reason, and redacted evidence           | Reconstruct bank reveal                           | Audit        | CRM proof implemented     |
 | I-01 | Cross-tenant IDOR                         | All tenant records   | Organization scope, composite tenant FKs, resource policy, RLS         | Read/link/search CRM rows as Tenant B             | Platform     | CRM proof implemented     |
 | I-04 | Cross-site cookie mutation                | Browser/API boundary | Trusted Origin plus double-submit CSRF token and SameSite cookies      | Cross-origin and mismatched-token requests        | Identity     | Verified                  |
-| I-02 | Document/object-key disclosure            | Object storage       | Random keys, fresh authorization, short signed URLs                    | Guess key and reuse expired URL                   | Documents    | Planned                   |
+| I-02 | Document/object-key disclosure            | Object storage       | Server-only random keys, fresh authorization, document-bound token     | Guess key and tamper/reuse token                  | Documents    | Implemented               |
 | I-03 | Sensitive data in logs/export             | Telemetry/export     | Field redaction, masked defaults, CSV hardening                        | Log capture and formula-injection fixtures        | Platform     | Planned                   |
-| D-01 | Oversized/malicious upload                | API/worker/storage   | Stream limits, signature checks, quarantine, ClamAV                    | EICAR, polyglot, double extension, oversized file | Documents    | Planned                   |
-| D-02 | Queue retry storm                         | Redis/worker         | Bounded retry, exponential backoff, dead-letter view                   | Kill worker mid-job                               | Workflows    | Planned                   |
+| D-01 | Oversized/malicious upload                | API/worker/storage   | Stream limits, signature checks, quarantine, ClamAV                    | EICAR, mismatch, double extension, oversized file | Documents    | Implemented               |
+| D-02 | Queue retry storm                         | Redis/worker         | Deterministic job, bounded retry/backoff, durable progress             | Kill worker mid-job and reload progress           | Workflows    | Partially implemented     |
 | E-01 | Self-approval or duplicate approver       | High-risk invoice    | Eligible-user policy, separation of duties, unique decision constraint | Initiator and repeated-user decisions             | Approvals    | Planned                   |
 | E-02 | Realtime room escalation                  | Building channel     | Reauthorize socket, room join, and mutation                            | Join another building room                        | Community    | Planned                   |
 | I-05 | Full bank data exposed by ordinary read   | Vendor bank evidence | AES-256-GCM, explicit safe selects, step-up reveal, reasoned audit     | Inspect list response and reveal audit            | Vendors      | Verified                  |

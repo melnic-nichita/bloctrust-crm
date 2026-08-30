@@ -11,9 +11,17 @@ import { StepUpGuard } from './identity/step-up.guard.js';
 import { OrganizationsModule } from './organizations/organizations.module.js';
 import { VersionController } from './version.controller.js';
 import { HealthModule } from './health/health.module.js';
+import { InvoicesModule } from './invoices/invoices.module.js';
 
 @Module({
-  imports: [DatabaseModule, HealthModule, IdentityModule, OrganizationsModule, CrmModule],
+  imports: [
+    DatabaseModule,
+    HealthModule,
+    IdentityModule,
+    OrganizationsModule,
+    CrmModule,
+    InvoicesModule,
+  ],
   controllers: [VersionController],
   providers: [
     CsrfService,

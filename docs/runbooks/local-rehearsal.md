@@ -2,18 +2,27 @@
 
 1. Copy `.env.example` to `.env` and keep all values development-only.
 2. Run `pnpm install` and confirm the lockfile is unchanged.
-3. Run `docker compose up -d postgres redis minio clamav mailpit`.
-4. Wait for ClamAV signature initialization, then inspect `docker compose ps`.
+3. Run `pnpm infra:up` to build and start the OCR worker with PostgreSQL, Redis, MinIO, ClamAV,
+   and Mailpit.
+4. Wait for ClamAV signature initialization, then inspect `docker compose ps`; the `worker`
+   container must be running before an invoice is uploaded.
 5. Run `pnpm db:generate`, `pnpm db:migrate`, and `pnpm db:seed` twice.
-6. Run `pnpm test:security:integration`; confirm the identity and CRM cross-tenant attacks,
-   refresh replay, immutable bank history, reveal audit, and stale-write tests pass.
-7. Run `pnpm dev`, create a synthetic organization in `/onboarding`, and register a passkey in
-   `/security`.
+6. Run `pnpm test:security:integration`; confirm the identity, CRM, invoice, and document
+   cross-tenant attacks, refresh replay, immutable bank history, reveal audit, suggestion
+   separation, and stale-write tests pass.
+7. Run `pnpm dev` for the API and web application. The containerized worker supplies ClamAV and
+   Tesseract processing. Create a synthetic organization in `/onboarding`, and register a passkey
+   in `/security`.
 8. Open `/crm`; create a synthetic building, apartment, resident occupancy, Vendor Trust Passport,
    second encrypted bank version, and contract. Confirm lists show only masked bank data.
-9. Inspect liveness, readiness, version, login, refresh rotation, and logout-all behavior.
-10. Stop Redis and confirm readiness returns 503 while liveness remains 200.
-11. Restart Redis and confirm readiness recovers.
-12. Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, and
+9. Open `/invoices`; upload a clean synthetic PDF and confirm progress survives a refresh, the
+   document reaches `NEEDS_REVIEW`, suggestions remain separate, and preview authorization expires.
+10. Set `RUN_CLAMAV_INTEGRATION=true`, run `pnpm test:security:clamav`, and confirm the harmless
+    antivirus test signature is blocked. Upload an oversized or signature-mismatched file and
+    confirm it is rejected before a database record is created.
+11. Inspect liveness, readiness, version, login, refresh rotation, and logout-all behavior.
+12. Stop Redis and confirm readiness returns 503 while liveness remains 200.
+13. Restart Redis and confirm readiness recovers.
+14. Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, and
     `pnpm validate:milestone`.
-13. Run `docker compose down`; use `-v` only when deliberately deleting local development data.
+15. Run `docker compose down`; use `-v` only when deliberately deleting local development data.

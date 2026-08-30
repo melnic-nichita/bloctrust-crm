@@ -9,3 +9,4 @@
 - [ADR-007: Replaceable connector capabilities](007-connectors.md)
 - [ADR-008: Hash-chained audit evidence](008-audit-chain.md)
 - [ADR-009: Application encryption for vendor bank fields](009-bank-field-encryption.md)
+- [ADR-010: Secure document quarantine](010-secure-document-quarantine.md)

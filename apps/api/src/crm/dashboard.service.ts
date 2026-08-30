@@ -23,55 +23,53 @@ export class DashboardService {
         ? { buildingLinks: { some: { buildingId: { in: buildingScope } } } }
         : {};
 
-      const [expiringContracts, vendorCandidates] = await Promise.all([
-        transaction.contract.findMany({
-          where: {
-            organizationId: auth.organizationId,
-            status: ContractStatus.ACTIVE,
-            endsOn: { gte: now, lte: expiresBefore },
-            ...contractWhere,
-          },
-          select: {
-            id: true,
-            reference: true,
-            title: true,
-            endsOn: true,
-            vendor: { select: { id: true, legalName: true } },
-          },
-          orderBy: { endsOn: 'asc' },
-          take: 25,
-        }),
-        transaction.vendor.findMany({
-          where: {
-            organizationId: auth.organizationId,
-            status: { not: VendorStatus.ARCHIVED },
-            ...vendorWhere,
-          },
-          select: {
-            id: true,
-            legalName: true,
-            registrationNumber: true,
-            taxId: true,
-            email: true,
-            phone: true,
-            contacts: { select: { isVerified: true } },
-            bankAccountVersions: {
-              select: {
-                id: true,
-                verifications: {
-                  select: { status: true },
-                  orderBy: { createdAt: 'desc' },
-                  take: 1,
-                },
+      const expiringContracts = await transaction.contract.findMany({
+        where: {
+          organizationId: auth.organizationId,
+          status: ContractStatus.ACTIVE,
+          endsOn: { gte: now, lte: expiresBefore },
+          ...contractWhere,
+        },
+        select: {
+          id: true,
+          reference: true,
+          title: true,
+          endsOn: true,
+          vendor: { select: { id: true, legalName: true } },
+        },
+        orderBy: { endsOn: 'asc' },
+        take: 25,
+      });
+      const vendorCandidates = await transaction.vendor.findMany({
+        where: {
+          organizationId: auth.organizationId,
+          status: { not: VendorStatus.ARCHIVED },
+          ...vendorWhere,
+        },
+        select: {
+          id: true,
+          legalName: true,
+          registrationNumber: true,
+          taxId: true,
+          email: true,
+          phone: true,
+          contacts: { select: { isVerified: true } },
+          bankAccountVersions: {
+            select: {
+              id: true,
+              verifications: {
+                select: { status: true },
+                orderBy: { createdAt: 'desc' },
+                take: 1,
               },
-              orderBy: { versionNumber: 'desc' },
-              take: 1,
             },
+            orderBy: { versionNumber: 'desc' },
+            take: 1,
           },
-          orderBy: { legalName: 'asc' },
-          take: 100,
-        }),
-      ]);
+        },
+        orderBy: { legalName: 'asc' },
+        take: 100,
+      });
 
       const incompleteVendors = vendorCandidates
         .map(

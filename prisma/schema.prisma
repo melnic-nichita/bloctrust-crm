@@ -53,6 +53,39 @@ enum ContractStatus {
   TERMINATED
 }
 
+enum InvoiceStatus {
+  PROCESSING
+  NEEDS_REVIEW
+  MANUAL_REVIEW
+  BLOCKED
+}
+
+enum DocumentKind {
+  INVOICE_SOURCE
+}
+
+enum DocumentStorageState {
+  QUARANTINED
+  APPROVED
+  BLOCKED
+}
+
+enum DocumentProcessingState {
+  QUARANTINED
+  SCANNING
+  PARSED
+  NEEDS_REVIEW
+  MANUAL_REVIEW
+  BLOCKED
+}
+
+enum DocumentScanResult {
+  PENDING
+  CLEAN
+  INFECTED
+  ERROR
+}
+
 model User {
   id                  String               @id @default(uuid()) @db.Uuid
   email               String               @unique @db.VarChar(320)
@@ -82,6 +115,8 @@ model Organization {
   occupancies Occupancy[]
   vendors     Vendor[]
   contracts   Contract[]
+  invoices    Invoice[]
+  documents   Document[]
   auditEvents AuditEvent[]
 }
 
@@ -101,6 +136,8 @@ model Membership {
   auditEvents                AuditEvent[]
   bankAccountVersionsCreated VendorBankAccountVersion[]      @relation("BankAccountVersionCreator")
   bankAccountVerifications   VendorBankAccountVerification[] @relation("BankAccountVerifier")
+  invoicesCreated            Invoice[]                       @relation("InvoiceCreator")
+  documentsCreated           Document[]                      @relation("DocumentCreator")
 
   @@unique([organizationId, userId])
   @@unique([id, organizationId])
@@ -299,6 +336,7 @@ model Vendor {
   buildingLinks       VendorBuilding[]
   bankAccountVersions VendorBankAccountVersion[]
   contracts           Contract[]
+  invoices            Invoice[]
 
   @@unique([id, organizationId])
   @@index([organizationId, status, legalName])
@@ -394,6 +432,7 @@ model Contract {
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   vendor            Vendor             @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Restrict)
   buildingLinks     ContractBuilding[]
+  invoices          Invoice[]
 
   @@unique([id, organizationId])
   @@unique([organizationId, reference])
@@ -412,6 +451,109 @@ model ContractBuilding {
 
   @@unique([organizationId, contractId, buildingId])
   @@index([organizationId, buildingId])
+}
+
+model Invoice {
+  id                      String        @id @default(uuid()) @db.Uuid
+  organizationId          String        @db.Uuid
+  vendorId                String?       @db.Uuid
+  contractId              String?       @db.Uuid
+  invoiceNumber           String?       @db.VarChar(80)
+  issueDate               DateTime?     @db.Date
+  dueDate                 DateTime?     @db.Date
+  currency                String?       @db.Char(3)
+  subtotal                Decimal?      @db.Decimal(19, 2)
+  taxAmount               Decimal?      @db.Decimal(19, 2)
+  totalAmount             Decimal?      @db.Decimal(19, 2)
+  notes                   String?       @db.VarChar(4000)
+  status                  InvoiceStatus @default(PROCESSING)
+  version                 Int           @default(1)
+  createdByMembershipId   String        @db.Uuid
+  createdAt               DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime      @updatedAt @db.Timestamptz(3)
+  organization            Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vendor                  Vendor?       @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  contract                Contract?     @relation(fields: [contractId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdByMembership     Membership    @relation("InvoiceCreator", fields: [createdByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  lines                   InvoiceLine[]
+  documents               Document[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, vendorId, invoiceNumber])
+  @@index([organizationId, contractId])
+}
+
+model InvoiceLine {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  invoiceId      String   @db.Uuid
+  description    String   @db.VarChar(500)
+  quantity       Decimal  @db.Decimal(19, 4)
+  unitPrice      Decimal  @db.Decimal(19, 4)
+  taxRate        Decimal? @db.Decimal(7, 4)
+  amount         Decimal  @db.Decimal(19, 2)
+  position       Int
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  invoice        Invoice  @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@unique([organizationId, invoiceId, position])
+  @@index([organizationId, invoiceId])
+}
+
+model Document {
+  id                      String               @id @default(uuid()) @db.Uuid
+  organizationId          String               @db.Uuid
+  invoiceId               String               @db.Uuid
+  kind                    DocumentKind         @default(INVOICE_SOURCE)
+  originalFilename        String               @db.VarChar(255)
+  declaredMimeType        String               @db.VarChar(120)
+  detectedMimeType        String               @db.VarChar(120)
+  sizeBytes               BigInt
+  quarantineObjectKey     String               @unique @db.VarChar(512)
+  approvedObjectKey       String?              @unique @db.VarChar(512)
+  sha256                  String?              @db.Char(64)
+  duplicateOfDocumentId   String?              @db.Uuid
+  storageState            DocumentStorageState @default(QUARANTINED)
+  createdByMembershipId   String               @db.Uuid
+  createdAt               DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime             @updatedAt @db.Timestamptz(3)
+  organization            Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice                 Invoice              @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  createdByMembership     Membership           @relation("DocumentCreator", fields: [createdByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  duplicateOf             Document?            @relation("DocumentDuplicates", fields: [duplicateOfDocumentId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  duplicates              Document[]           @relation("DocumentDuplicates")
+  processing              DocumentProcessing?
+
+  @@unique([id, organizationId])
+  @@index([organizationId, invoiceId])
+  @@index([organizationId, sha256])
+  @@index([organizationId, duplicateOfDocumentId])
+}
+
+model DocumentProcessing {
+  id                String                  @id @default(uuid()) @db.Uuid
+  organizationId    String                  @db.Uuid
+  documentId        String                  @db.Uuid
+  state             DocumentProcessingState @default(QUARANTINED)
+  progress          Int                     @default(10)
+  scanResult        DocumentScanResult      @default(PENDING)
+  scanDetail        String?                 @db.VarChar(500)
+  ocrEngine         String?                 @db.VarChar(80)
+  suggestions       Json?
+  attempts          Int                     @default(0)
+  lastHeartbeatAt   DateTime?               @db.Timestamptz(3)
+  startedAt         DateTime?               @db.Timestamptz(3)
+  completedAt       DateTime?               @db.Timestamptz(3)
+  errorCode         String?                 @db.VarChar(80)
+  errorMessage      String?                 @db.VarChar(500)
+  createdAt         DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime                @updatedAt @db.Timestamptz(3)
+  document          Document                @relation(fields: [documentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@unique([documentId, organizationId])
+  @@index([organizationId, state, updatedAt])
 }
 
 model AuditEvent {

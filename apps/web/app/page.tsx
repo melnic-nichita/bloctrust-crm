@@ -6,6 +6,7 @@ const foundations = [
   'Passkey registration and recent step-up',
   'Server-side roles plus PostgreSQL RLS',
   'Encrypted Vendor Trust Passports with immutable bank history',
+  'Quarantine, malware scanning, duplicate detection, and reviewer-controlled OCR',
 ];
 
 export default function HomePage() {
@@ -13,7 +14,7 @@ export default function HomePage() {
     <main>
       <nav aria-label="Primary navigation">
         <span className="brand">BLOCTRUST</span>
-        <span className="milestone">CRM core 0.3.0</span>
+        <span className="milestone">Secure invoice pipeline 0.4.0</span>
       </nav>
 
       <section className="hero" aria-labelledby="hero-heading">
@@ -33,13 +34,16 @@ export default function HomePage() {
           <Link className="text-link" href="/crm">
             Open CRM
           </Link>
+          <Link className="text-link" href="/invoices">
+            Review invoices
+          </Link>
         </div>
       </section>
 
       <section className="foundation" aria-labelledby="foundation-heading">
         <div>
-          <p className="eyebrow">MILESTONE 0.3 CRM CORE</p>
-          <h2 id="foundation-heading">A relationship graph with evidence attached.</h2>
+          <p className="eyebrow">MILESTONE 0.4 SECURE INVOICES</p>
+          <h2 id="foundation-heading">Documents become suggestions, never decisions.</h2>
         </div>
         <ol>
           {foundations.map((item, index) => (

@@ -2,7 +2,12 @@
 
 BlocTrust is a security-first, multi-tenant operations CRM for apartment associations and small property managers in Moldova. Its portfolio-defining workflow detects a vendor bank-account change, freezes a risky invoice, and requires two distinct step-up-verified administrators before approval.
 
-## Current milestone: 0.3.0 CRM core
+## Current milestone: 0.4.0 secure invoice pipeline
+
+Milestone 0.4 adds the roadmap's complete quarantine-to-review invoice path: bounded streaming
+uploads, file-signature validation, private MinIO object keys, ClamAV blocking, SHA-256 duplicate
+detection, Tesseract OCR suggestions, durable progress, audited short-lived downloads, and a
+side-by-side reviewer workspace at `/invoices`. See [the milestone notes](docs/milestone-0.4.md).
 
 Milestone 0.3 preserves the identity and tenant boundary from 0.2 and adds:
 
@@ -15,8 +20,8 @@ Milestone 0.3 preserves the identity and tenant boundary from 0.2 and adds:
 - redacted vendor/contract audit events and operational dashboards;
 - an administrator CRM at `http://localhost:3000/crm`.
 
-No real payments, invoices, resident data, banking credentials, or production secrets belong in
-this repository. The deterministic 0.3 fixtures are synthetic and non-payable.
+No real payments, invoice documents, resident data, banking credentials, or production secrets
+belong in this repository. All fixtures and demonstrations must remain synthetic and non-payable.
 
 ## Prerequisites
 
@@ -28,13 +33,16 @@ this repository. The deterministic 0.3 fixtures are synthetic and non-payable.
 
 ```bash
 cp .env.example .env
-pnpm install
-docker compose up -d postgres redis minio clamav mailpit
+pnpm install --frozen-lockfile
+pnpm infra:up
 pnpm db:generate
 pnpm db:migrate
 pnpm db:seed
 pnpm dev
 ```
+
+`pnpm infra:up` builds the isolated invoice worker with ClamAV connectivity, Tesseract, and Poppler.
+`pnpm dev` starts the API and web application; keep the Docker worker running for invoice processing.
 
 The first migration creates the non-login `bloctrust_app` database role. The local Docker database
 user can create it; production migration credentials need equivalent role-management permission.
@@ -85,6 +93,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm test:security:integration
+pnpm test:security:clamav
 pnpm build
 pnpm db:validate
 pnpm validate:milestone
