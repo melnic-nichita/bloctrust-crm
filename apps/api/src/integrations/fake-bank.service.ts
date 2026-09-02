@@ -46,13 +46,21 @@ export class FakeBankService {
           organizationId: payload.organizationId,
           vendorId: payload.vendorId,
         },
-        select: { id: true, externalStatus: true },
+        select: { id: true },
       });
       if (!bankAccount) {
         throw new NotFoundException({ code: 'FAKE_BANK_ACCOUNT_NOT_FOUND' });
       }
       const status = payload.status;
-      const stateTransitioned = bankAccount.externalStatus !== status;
+      const previousDelivery = await transaction.fakeBankWebhookDelivery.findFirst({
+        where: {
+          organizationId: payload.organizationId,
+          bankAccountVersionId: bankAccount.id,
+        },
+        select: { status: true },
+        orderBy: { processedAt: 'desc' },
+      });
+      const stateTransitioned = (previousDelivery?.status ?? 'PENDING') !== status;
       await transaction.fakeBankWebhookDelivery.create({
         data: {
           organizationId: payload.organizationId,
@@ -64,12 +72,6 @@ export class FakeBankService {
           providerTimestamp: new Date(Number(timestamp) * 1_000),
         },
       });
-      if (stateTransitioned) {
-        await transaction.vendorBankAccountVersion.update({
-          where: { id: payload.bankAccountVersionId },
-          data: { externalStatus: status, externalStatusUpdatedAt: new Date() },
-        });
-      }
       await writeAudit(transaction, {
         organizationId: payload.organizationId,
         action: 'FAKE_BANK_STATUS_RECEIVED',

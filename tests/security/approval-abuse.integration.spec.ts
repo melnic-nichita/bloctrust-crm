@@ -283,6 +283,17 @@ describe.skipIf(!enabled)('Milestone 0.5 approval abuse boundaries', () => {
     ).rejects.toMatchObject({ response: { code: 'PASSKEY_STEP_UP_REQUIRED' } });
   });
 
+  it('keeps approval session evidence tenant-scoped at the database layer', async () => {
+    await expect(
+      tenantDatabase.run(otherOrganizationId, (transaction) =>
+        transaction.session.findFirst({
+          where: { id: approverOneSessionId },
+          select: { id: true },
+        }),
+      ),
+    ).resolves.toBeNull();
+  });
+
   it('deduplicates decisions, invalidates edited evidence, and requires a fresh approval version', async () => {
     await prisma.session.update({
       where: { id: approverOneSessionId },
@@ -411,6 +422,18 @@ describe.skipIf(!enabled)('Milestone 0.5 approval abuse boundaries', () => {
         where: { organizationId, eventId: payload.eventId },
       }),
     ).toBe(1);
+    await expect(
+      prisma.fakeBankWebhookDelivery.update({
+        where: { organizationId_eventId: { organizationId, eventId: payload.eventId } },
+        data: { status: 'REJECTED' },
+      }),
+    ).rejects.toThrow('append-only');
+    await expect(
+      prisma.fakeBankWebhookDelivery.findUniqueOrThrow({
+        where: { organizationId_eventId: { organizationId, eventId: payload.eventId } },
+        select: { status: true },
+      }),
+    ).resolves.toEqual({ status: 'VERIFIED' });
   });
 
   function bankVersion(id: string, versionNumber: number, fingerprint: string) {

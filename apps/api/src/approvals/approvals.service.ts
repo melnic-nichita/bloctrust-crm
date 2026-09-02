@@ -236,21 +236,21 @@ export class ApprovalsService {
     });
   }
 
-  decide(
+  async decide(
     auth: AuthContext,
     requestId: string,
     dto: ApprovalDecisionDto,
     idempotencyKey: string | undefined,
   ) {
     const keyHash = idempotencyKeyHash(idempotencyKey);
-    return this.database.run(auth.organizationId, async (transaction) => {
+    const result = await this.database.run(auth.organizationId, async (transaction) => {
       const replay = await transaction.approvalDecision.findFirst({
         where: { organizationId: auth.organizationId, idempotencyKeyHash: keyHash },
         include: { approvalRequest: { include: requestInclude } },
       });
       if (replay) {
         if (replay.approvalRequestId !== requestId) throw idempotencyConflict();
-        return approvalView(replay.approvalRequest, []);
+        return { stale: false as const, value: approvalView(replay.approvalRequest, []) };
       }
       const request = await transaction.approvalRequest.findFirst({
         where: { id: requestId, organizationId: auth.organizationId },
@@ -266,7 +266,7 @@ export class ApprovalsService {
         request.invoice.status !== InvoiceStatus.AWAITING_APPROVAL
       ) {
         await this.invalidate(transaction, request, 'INVOICE_VERSION_CHANGED');
-        throw staleApproval();
+        return { stale: true as const };
       }
       if (request.invoice.vendorId) {
         const latestBankAccount = await transaction.vendorBankAccountVersion.findFirst({
@@ -279,7 +279,7 @@ export class ApprovalsService {
         });
         if (latestBankAccount?.id !== request.vendorBankAccountVersionId) {
           await this.invalidate(transaction, request, 'VENDOR_BANK_ACCOUNT_CHANGED');
-          throw staleApproval();
+          return { stale: true as const };
         }
       }
 
@@ -308,6 +308,7 @@ export class ApprovalsService {
           expiresAt: { gt: new Date() },
           stepUpVerifiedAt: { gte: stepUpAfter },
         },
+        select: { id: true, stepUpVerifiedAt: true },
       });
       if (!session?.stepUpVerifiedAt) throw approvalForbidden('PASSKEY_STEP_UP_REQUIRED');
 
@@ -380,8 +381,10 @@ export class ApprovalsService {
         include: requestInclude,
       });
       const eligible = await this.eligibleApprovers(transaction, auth.organizationId, updated);
-      return approvalView(updated, eligible);
+      return { stale: false as const, value: approvalView(updated, eligible) };
     });
+    if (result.stale) throw staleApproval();
+    return result.value;
   }
 
   getPolicy(auth: AuthContext) {
