@@ -36,8 +36,8 @@ services:
     image: minio/minio:RELEASE.2025-07-23T15-54-02Z
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: bloctrust_dev
-      MINIO_ROOT_PASSWORD: replace_for_non_local_use
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-bloctrust_dev}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-replace_for_non_local_use}
     ports:
       - '9000:9000'
       - '9001:9001'
@@ -71,6 +71,107 @@ services:
       - '8025:8025'
     restart: unless-stopped
 
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migration
+    environment:
+      DATABASE_URL: postgresql://bloctrust:bloctrust_dev@postgres:5432/bloctrust?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    environment:
+      NODE_ENV: production
+      API_PORT: 3001
+      APP_VERSION: 0.5.0
+      DATABASE_URL: postgresql://bloctrust:bloctrust_dev@postgres:5432/bloctrust?schema=public
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-bloctrust_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-replace_for_non_local_use}
+      MINIO_QUARANTINE_BUCKET: quarantine
+      MINIO_APPROVED_BUCKET: approved
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:3000}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SESSION_SIGNING_KEY: ${SESSION_SIGNING_KEY:-development_only_replace_with_32_random_bytes}
+      DOWNLOAD_TOKEN_SECRET: ${DOWNLOAD_TOKEN_SECRET:-development_only_replace_with_32_random_bytes}
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-development_only_replace_with_32_random_bytes}
+      FIELD_ENCRYPTION_KEY_ID: ${FIELD_ENCRYPTION_KEY_ID:-local-v1}
+      ACCESS_SESSION_TTL_SECONDS: 900
+      REFRESH_SESSION_TTL_SECONDS: 2592000
+      STEP_UP_TTL_SECONDS: 300
+      FAKE_BANK_WEBHOOK_SECRET: ${FAKE_BANK_WEBHOOK_SECRET:-local_fake_bank_secret_change_before_demo}
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-localhost}
+      WEBAUTHN_RP_NAME: BlocTrust CRM
+      WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-http://localhost:3000}
+      HIBP_PASSWORDS_URL: https://api.pwnedpasswords.com/range
+    ports:
+      - '3001:3001'
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/api/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 10
+    init: true
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api/v1}
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - '3000:3000'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 10
+    init: true
+    restart: unless-stopped
+
   worker:
     build:
       context: .
@@ -79,8 +180,8 @@ services:
       DATABASE_URL: postgresql://bloctrust:bloctrust_dev@postgres:5432/bloctrust?schema=public
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: bloctrust_dev
-      MINIO_SECRET_KEY: replace_for_non_local_use
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-bloctrust_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-replace_for_non_local_use}
       MINIO_QUARANTINE_BUCKET: quarantine
       MINIO_APPROVED_BUCKET: approved
       CLAMAV_HOST: clamav
@@ -89,8 +190,8 @@ services:
       OCR_LANGUAGES: eng
       INVOICE_WORKER_CONCURRENCY: 2
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       minio:

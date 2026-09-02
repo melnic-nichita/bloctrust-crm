@@ -10,3 +10,4 @@
 - [ADR-008: Hash-chained audit evidence](008-audit-chain.md)
 - [ADR-009: Application encryption for vendor bank fields](009-bank-field-encryption.md)
 - [ADR-010: Secure document quarantine](010-secure-document-quarantine.md)
+- [ADR-011: Explainable risk and separation of duties](011-explainable-risk-and-separation-of-duties.md)

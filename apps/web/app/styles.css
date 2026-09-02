@@ -672,3 +672,140 @@ input:focus {
     flex-direction: column;
   }
 }
+
+.risk-card {
+  border: 1px solid #334155;
+  border-radius: 14px;
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.risk-card.high,
+.risk-score.high {
+  border-color: #ef4444;
+  background: rgba(127, 29, 29, 0.24);
+}
+
+.risk-card.medium,
+.risk-score.medium {
+  border-color: #f59e0b;
+  background: rgba(120, 53, 15, 0.24);
+}
+
+.risk-card.low,
+.risk-score.low {
+  border-color: #22c55e;
+  background: rgba(20, 83, 45, 0.24);
+}
+
+.risk-card p,
+.decision-history p {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.approval-shell {
+  margin: 0 auto;
+  max-width: 1440px;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+.approval-header {
+  max-width: 800px;
+  padding: 4rem 0 2rem;
+}
+
+.approval-workspace {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(230px, 0.7fr) minmax(0, 2fr);
+}
+
+.approval-list,
+.approval-evidence,
+.evidence-list,
+.decision-history,
+.decision-form {
+  border: 1px solid rgba(17, 25, 20, 0.13);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.approval-list {
+  align-content: start;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.approval-list button {
+  background: transparent;
+  border: 1px solid rgba(17, 25, 20, 0.18);
+  color: inherit;
+  display: grid;
+  gap: 0.3rem;
+  text-align: left;
+}
+
+.approval-list button.selected {
+  border-color: var(--signal);
+}
+
+.approval-evidence {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 150px minmax(0, 1fr);
+}
+
+.risk-score {
+  border: 1px solid;
+  border-radius: 14px;
+  display: grid;
+  padding: 1rem;
+  place-content: center;
+  text-align: center;
+}
+
+.risk-score strong {
+  font-size: 3rem;
+}
+
+.evidence-list,
+.decision-history,
+.decision-form {
+  grid-column: 1 / -1;
+}
+
+.evidence-list > div,
+.decision-history p {
+  border-top: 1px solid rgba(17, 25, 20, 0.13);
+  padding: 0.9rem 0;
+}
+
+.evidence-list code {
+  overflow-wrap: anywhere;
+}
+
+.decision-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.decision-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.decision-form textarea {
+  min-height: 100px;
+}
+
+@media (max-width: 900px) {
+  .approval-workspace,
+  .approval-evidence {
+    grid-template-columns: 1fr;
+  }
+}

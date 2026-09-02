@@ -14,7 +14,7 @@ export default function HomePage() {
     <main>
       <nav aria-label="Primary navigation">
         <span className="brand">BLOCTRUST</span>
-        <span className="milestone">Secure invoice pipeline 0.4.0</span>
+        <span className="milestone">Explainable risk and dual approval 0.5.0</span>
       </nav>
 
       <section className="hero" aria-labelledby="hero-heading">

@@ -1,6 +1,6 @@
 {
   "name": "bloctrust-crm",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "packageManager": "pnpm@10.26.1",
   "engines": {
@@ -15,19 +15,23 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test && pnpm test:security:unit",
     "test:security:unit": "vitest run tests/security --exclude \"**/*.integration.spec.ts\"",
-    "test:security:integration": "vitest run tests/security/tenant-boundary.integration.spec.ts tests/security/session-replay.integration.spec.ts tests/security/crm-core.integration.spec.ts tests/security/invoice-pipeline.integration.spec.ts",
+    "test:security:integration": "vitest run tests/security/tenant-boundary.integration.spec.ts tests/security/session-replay.integration.spec.ts tests/security/crm-core.integration.spec.ts tests/security/invoice-pipeline.integration.spec.ts tests/security/approval-abuse.integration.spec.ts",
     "test:security:clamav": "vitest run tests/security/clamav.integration.spec.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "validate:foundation": "node scripts/validate-foundation.mjs",
-    "validate:milestone": "node scripts/validate-milestone-0.4.mjs",
+    "validate:milestone": "node scripts/validate-milestone-0.5.mjs",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "infra:up": "docker compose up -d --build postgres redis minio clamav mailpit worker",
-    "infra:down": "docker compose down"
+    "infra:down": "docker compose down",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f api web worker",
+    "docker:validate": "node scripts/validate-containers.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

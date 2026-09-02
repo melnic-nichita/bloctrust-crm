@@ -3,9 +3,17 @@ import type { DatabaseTransaction } from '../database/prisma.service.js';
 
 type AuditInput = Readonly<{
   organizationId: string;
-  actorMembershipId: string;
+  actorMembershipId?: string;
   action: string;
-  entityType: 'VENDOR' | 'CONTRACT' | 'BANK_ACCOUNT' | 'INVOICE' | 'DOCUMENT';
+  entityType:
+    | 'VENDOR'
+    | 'CONTRACT'
+    | 'BANK_ACCOUNT'
+    | 'INVOICE'
+    | 'DOCUMENT'
+    | 'APPROVAL_REQUEST'
+    | 'RISK_POLICY'
+    | 'FAKE_BANK_WEBHOOK';
   entityId: string;
   before?: object;
   after?: object;
