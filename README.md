@@ -2,12 +2,16 @@
 
 BlocTrust is a security-first, multi-tenant operations CRM for apartment associations and small property managers in Moldova. Its portfolio-defining workflow detects a vendor bank-account change, freezes a risky invoice, and requires two distinct step-up-verified administrators before approval.
 
-## Current milestone: 0.4.0 secure invoice pipeline
+## Current milestone: 0.5.0 explainable risk and dual approval
 
-Milestone 0.4 adds the roadmap's complete quarantine-to-review invoice path: bounded streaming
-uploads, file-signature validation, private MinIO object keys, ClamAV blocking, SHA-256 duplicate
-detection, Tesseract OCR suggestions, durable progress, audited short-lived downloads, and a
-side-by-side reviewer workspace at `/invoices`. See [the milestone notes](docs/milestone-0.4.md).
+Milestone 0.5 adds deterministic versioned risk evidence, organization thresholds, changed-bank
+holds, version-bound approval requests, separation of duties, distinct passkey-verified decisions,
+stale-request invalidation, and a signed replay-protected fake-bank adapter. Review invoices at
+`/invoices` and decisions at `/approvals`. See [the milestone notes](docs/milestone-0.5.md).
+
+Milestone 0.4 preserves the secure quarantine-to-review invoice path: bounded uploads, signature
+validation, private MinIO keys, ClamAV, SHA-256 duplicate detection, OCR suggestions, durable
+progress, and audited short-lived downloads.
 
 Milestone 0.3 preserves the identity and tenant boundary from 0.2 and adds:
 
@@ -30,6 +34,30 @@ belong in this repository. All fixtures and demonstrations must remain synthetic
 - Docker Desktop with Compose
 
 ## Quick start
+
+### Fully containerized application
+
+Docker Compose builds and runs the Next.js web application, NestJS API, Prisma migration job,
+BullMQ/OCR worker, PostgreSQL, Redis, MinIO, ClamAV, and Mailpit:
+
+```bash
+cp .env.example .env
+pnpm docker:validate
+pnpm docker:up
+docker compose ps
+```
+
+The migration container must finish successfully, and the API and web containers must become
+healthy. Follow application logs with `pnpm docker:logs`. Open `http://localhost:3000`; the API
+remains available at `http://localhost:3001/api/v1`.
+
+Stop the stack without deleting development data:
+
+```bash
+pnpm docker:down
+```
+
+### Hybrid development mode
 
 ```bash
 cp .env.example .env
@@ -86,6 +114,22 @@ recent passkey step-up; reveal also requires a reason.
 All state-changing browser requests require a trusted `Origin`. Once cookies exist, the readable
 CSRF cookie must also be copied into `X-CSRF-Token`.
 
+## Risk and approval endpoints
+
+- `POST /api/v1/organizations/:organizationId/invoices/:invoiceId/submit` - snapshot risk evidence
+  and create an idempotent version-bound request
+- `GET /api/v1/organizations/:organizationId/approval-requests` - eligible review queue
+- `GET /api/v1/organizations/:organizationId/approval-requests/:requestId` - explanation and
+  decision history
+- `POST /api/v1/organizations/:organizationId/approval-requests/:requestId/decisions` - reasoned,
+  recent-passkey decision
+- `GET|PUT /api/v1/organizations/:organizationId/risk-policy` - organization thresholds
+- `POST /api/v1/integrations/fake-bank/webhooks/status` - signed replay-protected synthetic status
+  callback
+
+Approval decisions require a fresh passkey step-up and an `Idempotency-Key`. High-risk requests
+require two distinct eligible memberships, and the submitting membership cannot approve.
+
 ## Useful commands
 
 ```bash
@@ -109,6 +153,8 @@ docker compose ps
 - [Release backlog](docs/release-backlog.md)
 - [Milestone 0.2 security design](docs/milestone-0.2.md)
 - [Milestone 0.3 CRM/security design](docs/milestone-0.3.md)
+- [Milestone 0.4 secure invoice design](docs/milestone-0.4.md)
+- [Milestone 0.5 risk/approval design](docs/milestone-0.5.md)
 - [Architecture decisions](docs/adr/README.md)
 
 ## First vertical slice

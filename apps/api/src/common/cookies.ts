@@ -8,18 +8,21 @@ export type SessionCookies = Readonly<{
   refreshExpiresAt: Date;
 }>;
 
-const production = process.env.NODE_ENV === 'production';
+const secureCookies =
+  process.env.COOKIE_SECURE === undefined
+    ? process.env.NODE_ENV === 'production'
+    : process.env.COOKIE_SECURE === 'true';
 
 export const cookieNames = Object.freeze({
-  access: production ? '__Host-bt_access' : 'bt_access',
-  refresh: production ? '__Host-bt_refresh' : 'bt_refresh',
-  csrf: production ? '__Host-bt_csrf' : 'bt_csrf',
+  access: secureCookies ? '__Host-bt_access' : 'bt_access',
+  refresh: secureCookies ? '__Host-bt_refresh' : 'bt_refresh',
+  csrf: secureCookies ? '__Host-bt_csrf' : 'bt_csrf',
 });
 
 const baseOptions: CookieOptions = {
   path: '/',
   sameSite: 'strict',
-  secure: production,
+  secure: secureCookies,
 };
 
 export function readCookies(request: Request): Readonly<Record<string, string>> {

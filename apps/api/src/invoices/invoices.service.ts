@@ -150,6 +150,18 @@ export class InvoicesService {
         where: { id: invoiceId, organizationId: auth.organizationId },
         include: {
           lines: { orderBy: { position: 'asc' } },
+          riskAssessments: { orderBy: { createdAt: 'desc' }, take: 1 },
+          approvalRequests: {
+            orderBy: { version: 'desc' },
+            take: 1,
+            include: {
+              riskAssessment: true,
+              decisions: {
+                select: { id: true, outcome: true, reason: true, createdAt: true },
+                orderBy: { createdAt: 'asc' },
+              },
+            },
+          },
           documents: {
             select: {
               id: true,
@@ -185,6 +197,20 @@ export class InvoicesService {
       if (!canEditInvoiceDraft(existing.status, existing.documents)) {
         throw new ConflictException({ code: 'INVOICE_NOT_EDITABLE' });
       }
+      const invalidatesApproval = existing.status === 'AWAITING_APPROVAL';
+      if (invalidatesApproval) {
+        await transaction.approvalRequest.updateMany({
+          where: {
+            organizationId: auth.organizationId,
+            invoiceId,
+            status: 'PENDING',
+          },
+          data: {
+            status: 'INVALIDATED',
+            invalidatedReason: 'INVOICE_DATA_CHANGED',
+          },
+        });
+      }
       const vendorId = dto.vendorId ?? existing.vendorId;
       const contractId = dto.contractId ?? existing.contractId;
       await this.assertRelationships(transaction, auth.organizationId, {
@@ -204,6 +230,9 @@ export class InvoicesService {
           ...(dto.taxAmount !== undefined ? { taxAmount: dto.taxAmount } : {}),
           ...(dto.totalAmount !== undefined ? { totalAmount: dto.totalAmount } : {}),
           ...(dto.notes !== undefined ? { notes: dto.notes.trim() } : {}),
+          ...(invalidatesApproval
+            ? { status: 'NEEDS_REVIEW' as const, vendorBankAccountVersionId: null }
+            : {}),
           version: { increment: 1 },
         },
       });
@@ -241,6 +270,17 @@ export class InvoicesService {
         before: invoiceAudit(existing),
         after: invoiceAudit(updated),
       });
+      if (invalidatesApproval) {
+        await writeAudit(transaction, {
+          organizationId: auth.organizationId,
+          actorMembershipId: auth.membershipId,
+          action: 'APPROVAL_REQUEST_INVALIDATED',
+          entityType: 'INVOICE',
+          entityId: invoiceId,
+          reason: 'Invoice financial data changed while approval was pending.',
+          after: { invoiceVersion: updated.version, status: updated.status },
+        });
+      }
       return sanitizeInvoice(updated);
     });
   }
@@ -388,7 +428,7 @@ export function canEditInvoiceDraft(
     processing: { scanResult: string } | null;
   }>,
 ): boolean {
-  if (status === 'NEEDS_REVIEW') return true;
+  if (status === 'NEEDS_REVIEW' || status === 'AWAITING_APPROVAL') return true;
   if (status !== 'MANUAL_REVIEW') return false;
   return documents.some(
     (document) =>

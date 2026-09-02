@@ -41,7 +41,8 @@
 
 ## Milestone 0.5 - risk and approvals
 
-- [ ] Explainable risk rules and changed-account hold.
-- [ ] Dual passkey approval with separation of duties.
-- [ ] Transactional outbox, idempotent notification, and audit timeline.
-- [ ] Tenant B denial test across the complete scenario.
+- [x] Versioned explainable risk rules, organization thresholds, and changed-account hold.
+- [x] Version-bound dual passkey approval with separation of duties.
+- [x] Approval idempotency, immutable decisions, rejection reasons, and audit evidence.
+- [x] Signed, replay-protected fake-bank status adapter.
+- [x] Self-approval, stale-version, forged-step-up, duplicate-decision, and webhook replay tests.

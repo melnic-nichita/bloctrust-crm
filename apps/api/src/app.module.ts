@@ -12,6 +12,7 @@ import { OrganizationsModule } from './organizations/organizations.module.js';
 import { VersionController } from './version.controller.js';
 import { HealthModule } from './health/health.module.js';
 import { InvoicesModule } from './invoices/invoices.module.js';
+import { IntegrationsModule } from './integrations/integrations.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { InvoicesModule } from './invoices/invoices.module.js';
     OrganizationsModule,
     CrmModule,
     InvoicesModule,
+    IntegrationsModule,
   ],
   controllers: [VersionController],
   providers: [

@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Header,
+  Headers,
   Param,
   Patch,
   Post,
@@ -21,6 +22,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { diskStorage } from 'multer';
 import { MembershipRole } from '../generated/prisma/client.js';
+import { ApprovalsService } from '../approvals/approvals.service.js';
+import { SubmitInvoiceDto } from '../approvals/dto.js';
 import type { AuthenticatedRequest } from '../identity/authenticated-request.js';
 import { Roles } from '../identity/roles.decorator.js';
 import { OrganizationScopeGuard } from '../organizations/organization-scope.guard.js';
@@ -34,7 +37,10 @@ mkdirSync(uploadDirectory, { recursive: true, mode: 0o700 });
 @Controller('organizations/:organizationId/invoices')
 @UseGuards(OrganizationScopeGuard)
 export class InvoicesController {
-  constructor(private readonly invoices: InvoicesService) {}
+  constructor(
+    private readonly invoices: InvoicesService,
+    private readonly approvals: ApprovalsService,
+  ) {}
 
   @Get()
   @Roles(
@@ -85,6 +91,17 @@ export class InvoicesController {
     @Body() dto: UpdateInvoiceDraftDto,
   ) {
     return this.invoices.update(request.auth, invoiceId, dto);
+  }
+
+  @Post(':invoiceId/submit')
+  @Roles(MembershipRole.OWNER, MembershipRole.ADMINISTRATOR, MembershipRole.ACCOUNTANT)
+  submit(
+    @Req() request: AuthenticatedRequest,
+    @Param('invoiceId') invoiceId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Body() dto: SubmitInvoiceDto,
+  ) {
+    return this.approvals.submit(request.auth, invoiceId, dto, idempotencyKey);
   }
 
   @Post('documents/:documentId/download-authorizations')

@@ -1,5 +1,18 @@
 # Local environment rehearsal
 
+## Fully containerized path
+
+1. Copy `.env.example` to `.env` and keep all values synthetic and development-only.
+2. Run `pnpm docker:validate` and `pnpm docker:up`.
+3. Run `docker compose ps -a`. The `migrate` container must exit with code 0; `api`, `web`,
+   PostgreSQL, Redis, MinIO, and ClamAV must be healthy; `worker` must be running.
+4. Open `http://localhost:3000/onboarding` and create a synthetic local organization.
+5. Inspect `http://localhost:3001/api/v1/health/ready`, then exercise `/invoices` and `/approvals`.
+6. Follow operational output with `pnpm docker:logs`.
+7. Stop with `pnpm docker:down`. Add `-v` only when intentionally deleting all local data.
+
+## Hybrid development path
+
 1. Copy `.env.example` to `.env` and keep all values development-only.
 2. Run `pnpm install` and confirm the lockfile is unchanged.
 3. Run `pnpm infra:up` to build and start the OCR worker with PostgreSQL, Redis, MinIO, ClamAV,

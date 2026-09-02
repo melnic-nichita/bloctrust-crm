@@ -58,6 +58,27 @@ enum InvoiceStatus {
   NEEDS_REVIEW
   MANUAL_REVIEW
   BLOCKED
+  AWAITING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  INVALIDATED
+}
+
+enum ApprovalDecisionOutcome {
+  APPROVE
+  REJECT
 }
 
 enum DocumentKind {
@@ -102,22 +123,27 @@ model User {
 }
 
 model Organization {
-  id          String       @id @default(uuid()) @db.Uuid
-  slug        String       @unique @db.VarChar(80)
-  name        String       @db.VarChar(160)
-  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
-  memberships Membership[]
-  invitations Invitation[]
-  sessions    Session[]
-  buildings   Building[]
-  apartments  Apartment[]
-  occupancies Occupancy[]
-  vendors     Vendor[]
-  contracts   Contract[]
-  invoices    Invoice[]
-  documents   Document[]
-  auditEvents AuditEvent[]
+  id                        String                    @id @default(uuid()) @db.Uuid
+  slug                      String                    @unique @db.VarChar(80)
+  name                      String                    @db.VarChar(160)
+  createdAt                 DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                  @updatedAt @db.Timestamptz(3)
+  memberships               Membership[]
+  invitations               Invitation[]
+  sessions                  Session[]
+  buildings                 Building[]
+  apartments                Apartment[]
+  occupancies               Occupancy[]
+  vendors                   Vendor[]
+  contracts                 Contract[]
+  invoices                  Invoice[]
+  documents                 Document[]
+  auditEvents               AuditEvent[]
+  riskPolicy                OrganizationRiskPolicy?
+  riskAssessments           RiskAssessment[]
+  approvalRequests          ApprovalRequest[]
+  approvalDecisions         ApprovalDecision[]
+  fakeBankWebhookDeliveries FakeBankWebhookDelivery[]
 }
 
 model Membership {
@@ -138,6 +164,8 @@ model Membership {
   bankAccountVerifications   VendorBankAccountVerification[] @relation("BankAccountVerifier")
   invoicesCreated            Invoice[]                       @relation("InvoiceCreator")
   documentsCreated           Document[]                      @relation("DocumentCreator")
+  approvalRequestsInitiated  ApprovalRequest[]               @relation("ApprovalInitiator")
+  approvalDecisions          ApprovalDecision[]              @relation("ApprovalDecider")
 
   @@unique([organizationId, userId])
   @@unique([id, organizationId])
@@ -181,7 +209,9 @@ model Session {
   organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   refreshTokens     SessionRefreshToken[]
   passkeyChallenges PasskeyChallenge[]
+  approvalDecisions ApprovalDecision[]
 
+  @@unique([id, organizationId])
   @@index([userId, revokedAt])
   @@index([organizationId, revokedAt])
   @@index([tokenFamilyId])
@@ -374,23 +404,28 @@ model VendorBuilding {
 }
 
 model VendorBankAccountVersion {
-  id                    String                          @id @default(uuid()) @db.Uuid
-  organizationId        String                          @db.Uuid
-  vendorId              String                          @db.Uuid
-  versionNumber         Int
-  countryCode           String                          @db.Char(2)
-  encryptedAccount      String                          @db.Text
-  encryptionIv          String                          @db.VarChar(64)
-  encryptionTag         String                          @db.VarChar(64)
-  encryptionKeyId       String                          @db.VarChar(80)
-  accountFingerprint    String                          @db.VarChar(128)
-  maskedAccount         String                          @db.VarChar(80)
-  maskedAccountHolder   String                          @db.VarChar(200)
-  createdByMembershipId String                          @db.Uuid
-  createdAt             DateTime                        @default(now()) @db.Timestamptz(3)
-  vendor                Vendor                          @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Restrict)
-  createdByMembership   Membership                      @relation("BankAccountVersionCreator", fields: [createdByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
-  verifications         VendorBankAccountVerification[]
+  id                        String                          @id @default(uuid()) @db.Uuid
+  organizationId            String                          @db.Uuid
+  vendorId                  String                          @db.Uuid
+  versionNumber             Int
+  countryCode               String                          @db.Char(2)
+  encryptedAccount          String                          @db.Text
+  encryptionIv              String                          @db.VarChar(64)
+  encryptionTag             String                          @db.VarChar(64)
+  encryptionKeyId           String                          @db.VarChar(80)
+  accountFingerprint        String                          @db.VarChar(128)
+  maskedAccount             String                          @db.VarChar(80)
+  maskedAccountHolder       String                          @db.VarChar(200)
+  createdByMembershipId     String                          @db.Uuid
+  createdAt                 DateTime                        @default(now()) @db.Timestamptz(3)
+  externalStatus            BankAccountVerificationStatus   @default(PENDING)
+  externalStatusUpdatedAt   DateTime?                       @db.Timestamptz(3)
+  vendor                    Vendor                          @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdByMembership       Membership                      @relation("BankAccountVersionCreator", fields: [createdByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  verifications             VendorBankAccountVerification[]
+  invoices                  Invoice[]                       @relation("InvoiceBankAccountVersion")
+  approvalRequests          ApprovalRequest[]
+  fakeBankWebhookDeliveries FakeBankWebhookDelivery[]
 
   @@unique([id, organizationId])
   @@unique([organizationId, vendorId, versionNumber])
@@ -454,34 +489,39 @@ model ContractBuilding {
 }
 
 model Invoice {
-  id                      String        @id @default(uuid()) @db.Uuid
-  organizationId          String        @db.Uuid
-  vendorId                String?       @db.Uuid
-  contractId              String?       @db.Uuid
-  invoiceNumber           String?       @db.VarChar(80)
-  issueDate               DateTime?     @db.Date
-  dueDate                 DateTime?     @db.Date
-  currency                String?       @db.Char(3)
-  subtotal                Decimal?      @db.Decimal(19, 2)
-  taxAmount               Decimal?      @db.Decimal(19, 2)
-  totalAmount             Decimal?      @db.Decimal(19, 2)
-  notes                   String?       @db.VarChar(4000)
-  status                  InvoiceStatus @default(PROCESSING)
-  version                 Int           @default(1)
-  createdByMembershipId   String        @db.Uuid
-  createdAt               DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt               DateTime      @updatedAt @db.Timestamptz(3)
-  organization            Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  vendor                  Vendor?       @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Restrict)
-  contract                Contract?     @relation(fields: [contractId, organizationId], references: [id, organizationId], onDelete: Restrict)
-  createdByMembership     Membership    @relation("InvoiceCreator", fields: [createdByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
-  lines                   InvoiceLine[]
-  documents               Document[]
+  id                         String                    @id @default(uuid()) @db.Uuid
+  organizationId             String                    @db.Uuid
+  vendorId                   String?                   @db.Uuid
+  contractId                 String?                   @db.Uuid
+  vendorBankAccountVersionId String?                   @db.Uuid
+  invoiceNumber              String?                   @db.VarChar(80)
+  issueDate                  DateTime?                 @db.Date
+  dueDate                    DateTime?                 @db.Date
+  currency                   String?                   @db.Char(3)
+  subtotal                   Decimal?                  @db.Decimal(19, 2)
+  taxAmount                  Decimal?                  @db.Decimal(19, 2)
+  totalAmount                Decimal?                  @db.Decimal(19, 2)
+  notes                      String?                   @db.VarChar(4000)
+  status                     InvoiceStatus             @default(PROCESSING)
+  version                    Int                       @default(1)
+  createdByMembershipId      String                    @db.Uuid
+  createdAt                  DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime                  @updatedAt @db.Timestamptz(3)
+  organization               Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vendor                     Vendor?                   @relation(fields: [vendorId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  contract                   Contract?                 @relation(fields: [contractId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  vendorBankAccountVersion   VendorBankAccountVersion? @relation("InvoiceBankAccountVersion", fields: [vendorBankAccountVersionId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdByMembership        Membership                @relation("InvoiceCreator", fields: [createdByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  lines                      InvoiceLine[]
+  documents                  Document[]
+  riskAssessments            RiskAssessment[]
+  approvalRequests           ApprovalRequest[]
 
   @@unique([id, organizationId])
   @@index([organizationId, status, createdAt])
   @@index([organizationId, vendorId, invoiceNumber])
   @@index([organizationId, contractId])
+  @@index([organizationId, vendorBankAccountVersionId])
 }
 
 model InvoiceLine {
@@ -503,28 +543,28 @@ model InvoiceLine {
 }
 
 model Document {
-  id                      String               @id @default(uuid()) @db.Uuid
-  organizationId          String               @db.Uuid
-  invoiceId               String               @db.Uuid
-  kind                    DocumentKind         @default(INVOICE_SOURCE)
-  originalFilename        String               @db.VarChar(255)
-  declaredMimeType        String               @db.VarChar(120)
-  detectedMimeType        String               @db.VarChar(120)
-  sizeBytes               BigInt
-  quarantineObjectKey     String               @unique @db.VarChar(512)
-  approvedObjectKey       String?              @unique @db.VarChar(512)
-  sha256                  String?              @db.Char(64)
-  duplicateOfDocumentId   String?              @db.Uuid
-  storageState            DocumentStorageState @default(QUARANTINED)
-  createdByMembershipId   String               @db.Uuid
-  createdAt               DateTime             @default(now()) @db.Timestamptz(3)
-  updatedAt               DateTime             @updatedAt @db.Timestamptz(3)
-  organization            Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  invoice                 Invoice              @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Cascade)
-  createdByMembership     Membership           @relation("DocumentCreator", fields: [createdByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
-  duplicateOf             Document?            @relation("DocumentDuplicates", fields: [duplicateOfDocumentId, organizationId], references: [id, organizationId], onDelete: Restrict)
-  duplicates              Document[]           @relation("DocumentDuplicates")
-  processing              DocumentProcessing?
+  id                    String               @id @default(uuid()) @db.Uuid
+  organizationId        String               @db.Uuid
+  invoiceId             String               @db.Uuid
+  kind                  DocumentKind         @default(INVOICE_SOURCE)
+  originalFilename      String               @db.VarChar(255)
+  declaredMimeType      String               @db.VarChar(120)
+  detectedMimeType      String               @db.VarChar(120)
+  sizeBytes             BigInt
+  quarantineObjectKey   String               @unique @db.VarChar(512)
+  approvedObjectKey     String?              @unique @db.VarChar(512)
+  sha256                String?              @db.Char(64)
+  duplicateOfDocumentId String?              @db.Uuid
+  storageState          DocumentStorageState @default(QUARANTINED)
+  createdByMembershipId String               @db.Uuid
+  createdAt             DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime             @updatedAt @db.Timestamptz(3)
+  organization          Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice               Invoice              @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  createdByMembership   Membership           @relation("DocumentCreator", fields: [createdByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  duplicateOf           Document?            @relation("DocumentDuplicates", fields: [duplicateOfDocumentId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  duplicates            Document[]           @relation("DocumentDuplicates")
+  processing            DocumentProcessing?
 
   @@unique([id, organizationId])
   @@index([organizationId, invoiceId])
@@ -533,27 +573,134 @@ model Document {
 }
 
 model DocumentProcessing {
-  id                String                  @id @default(uuid()) @db.Uuid
-  organizationId    String                  @db.Uuid
-  documentId        String                  @db.Uuid
-  state             DocumentProcessingState @default(QUARANTINED)
-  progress          Int                     @default(10)
-  scanResult        DocumentScanResult      @default(PENDING)
-  scanDetail        String?                 @db.VarChar(500)
-  ocrEngine         String?                 @db.VarChar(80)
-  suggestions       Json?
-  attempts          Int                     @default(0)
-  lastHeartbeatAt   DateTime?               @db.Timestamptz(3)
-  startedAt         DateTime?               @db.Timestamptz(3)
-  completedAt       DateTime?               @db.Timestamptz(3)
-  errorCode         String?                 @db.VarChar(80)
-  errorMessage      String?                 @db.VarChar(500)
-  createdAt         DateTime                @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime                @updatedAt @db.Timestamptz(3)
-  document          Document                @relation(fields: [documentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  id              String                  @id @default(uuid()) @db.Uuid
+  organizationId  String                  @db.Uuid
+  documentId      String                  @db.Uuid
+  state           DocumentProcessingState @default(QUARANTINED)
+  progress        Int                     @default(10)
+  scanResult      DocumentScanResult      @default(PENDING)
+  scanDetail      String?                 @db.VarChar(500)
+  ocrEngine       String?                 @db.VarChar(80)
+  suggestions     Json?
+  attempts        Int                     @default(0)
+  lastHeartbeatAt DateTime?               @db.Timestamptz(3)
+  startedAt       DateTime?               @db.Timestamptz(3)
+  completedAt     DateTime?               @db.Timestamptz(3)
+  errorCode       String?                 @db.VarChar(80)
+  errorMessage    String?                 @db.VarChar(500)
+  createdAt       DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                @updatedAt @db.Timestamptz(3)
+  document        Document                @relation(fields: [documentId, organizationId], references: [id, organizationId], onDelete: Cascade)
 
   @@unique([documentId, organizationId])
   @@index([organizationId, state, updatedAt])
+}
+
+model OrganizationRiskPolicy {
+  id                          String       @id @default(uuid()) @db.Uuid
+  organizationId              String       @unique @db.Uuid
+  ruleVersion                 Int          @default(1)
+  mediumThreshold             Int          @default(30)
+  highThreshold               Int          @default(70)
+  changedBankAccountScore     Int          @default(70)
+  duplicateHashScore          Int          @default(70)
+  duplicateInvoiceNumberScore Int          @default(35)
+  contractLimitScore          Int          @default(50)
+  amountSpikeScore            Int          @default(25)
+  requireSeparationOfDuties   Boolean      @default(true)
+  createdAt                   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime     @updatedAt @db.Timestamptz(3)
+  organization                Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model RiskAssessment {
+  id              String           @id @default(uuid()) @db.Uuid
+  organizationId  String           @db.Uuid
+  invoiceId       String           @db.Uuid
+  invoiceVersion  Int
+  ruleVersion     Int
+  facts           Json
+  contributions   Json
+  totalScore      Int
+  level           RiskLevel
+  evidenceHash    String           @db.Char(64)
+  createdAt       DateTime         @default(now()) @db.Timestamptz(3)
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice         Invoice          @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  approvalRequest ApprovalRequest?
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, invoiceId, invoiceVersion])
+  @@index([organizationId, level, createdAt])
+}
+
+model ApprovalRequest {
+  id                         String                    @id @default(uuid()) @db.Uuid
+  organizationId             String                    @db.Uuid
+  invoiceId                  String                    @db.Uuid
+  invoiceVersion             Int
+  riskAssessmentId           String                    @unique @db.Uuid
+  vendorBankAccountVersionId String?                   @db.Uuid
+  version                    Int
+  status                     ApprovalRequestStatus     @default(PENDING)
+  requiredDecisions          Int
+  initiatedByMembershipId    String                    @db.Uuid
+  idempotencyKeyHash         String                    @db.Char(64)
+  invalidatedReason          String?                   @db.VarChar(500)
+  completedAt                DateTime?                 @db.Timestamptz(3)
+  createdAt                  DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime                  @updatedAt @db.Timestamptz(3)
+  organization               Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice                    Invoice                   @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  riskAssessment             RiskAssessment            @relation(fields: [riskAssessmentId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  vendorBankAccountVersion   VendorBankAccountVersion? @relation(fields: [vendorBankAccountVersionId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  initiatedByMembership      Membership                @relation("ApprovalInitiator", fields: [initiatedByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  decisions                  ApprovalDecision[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, invoiceId, version])
+  @@unique([organizationId, idempotencyKeyHash])
+  @@unique([riskAssessmentId, organizationId])
+  @@index([organizationId, status, createdAt])
+}
+
+model ApprovalDecision {
+  id                    String                  @id @default(uuid()) @db.Uuid
+  organizationId        String                  @db.Uuid
+  approvalRequestId     String                  @db.Uuid
+  approvalVersion       Int
+  decidedByMembershipId String                  @db.Uuid
+  sessionId             String                  @db.Uuid
+  outcome               ApprovalDecisionOutcome
+  reason                String                  @db.VarChar(500)
+  stepUpVerifiedAt      DateTime                @db.Timestamptz(3)
+  idempotencyKeyHash    String                  @db.Char(64)
+  createdAt             DateTime                @default(now()) @db.Timestamptz(3)
+  organization          Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  approvalRequest       ApprovalRequest         @relation(fields: [approvalRequestId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  decidedByMembership   Membership              @relation("ApprovalDecider", fields: [decidedByMembershipId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  session               Session                 @relation(fields: [sessionId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  @@unique([organizationId, approvalRequestId, decidedByMembershipId])
+  @@unique([organizationId, idempotencyKeyHash])
+  @@index([organizationId, approvalRequestId, createdAt])
+}
+
+model FakeBankWebhookDelivery {
+  id                   String                        @id @default(uuid()) @db.Uuid
+  organizationId       String                        @db.Uuid
+  eventId              String                        @db.Uuid
+  vendorId             String                        @db.Uuid
+  bankAccountVersionId String                        @db.Uuid
+  status               BankAccountVerificationStatus
+  payloadHash          String                        @db.Char(64)
+  providerTimestamp    DateTime                      @db.Timestamptz(3)
+  processedAt          DateTime                      @default(now()) @db.Timestamptz(3)
+  organization         Organization                  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bankAccountVersion   VendorBankAccountVersion      @relation(fields: [bankAccountVersionId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  @@unique([organizationId, eventId])
+  @@index([organizationId, bankAccountVersionId, processedAt])
 }
 
 model AuditEvent {

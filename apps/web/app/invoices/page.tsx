@@ -24,6 +24,25 @@ type Document = Readonly<{
   processing: Processing;
 }>;
 type Line = Readonly<{ description: string; quantity: string; unitPrice: string; amount: string }>;
+type RiskContribution = Readonly<{
+  rule: string;
+  score: number;
+  explanation: string;
+  evidence: string;
+}>;
+type ApprovalRequest = Readonly<{
+  id: string;
+  version: number;
+  status: string;
+  requiredDecisions: number;
+  decisions: ReadonlyArray<{ id: string; outcome: string; reason: string }>;
+  riskAssessment: {
+    level: string;
+    totalScore: number;
+    evidenceHash: string;
+    contributions: RiskContribution[];
+  };
+}>;
 type Invoice = Readonly<{
   id: string;
   invoiceNumber: string | null;
@@ -34,6 +53,7 @@ type Invoice = Readonly<{
   version: number;
   lines?: Line[];
   documents: Document[];
+  approvalRequests?: ApprovalRequest[];
 }>;
 
 export default function InvoicesPage() {
@@ -150,6 +170,28 @@ export default function InvoicesPage() {
     }
   }
 
+  async function submitForApproval() {
+    if (!selected) return;
+    setPending(true);
+    setError(undefined);
+    try {
+      await apiRequest(
+        `/organizations/${profile!.organization.id}/invoices/${selected.id}/submit`,
+        {
+          method: 'POST',
+          headers: { 'Idempotency-Key': crypto.randomUUID() },
+          body: JSON.stringify({ version: selected.version }),
+        },
+      );
+      setMessage('Risk evidence stored. The approval request is now frozen to this version.');
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Submission failed');
+    } finally {
+      setPending(false);
+    }
+  }
+
   const document = selected?.documents[0];
   const suggestions = document?.processing.suggestions ?? {};
   return (
@@ -158,8 +200,9 @@ export default function InvoicesPage() {
         <Link className="brand" href="/">
           BLOCTRUST
         </Link>
-        <span>{profile?.organization.name ?? 'Secure invoice pipeline'} · 0.4.0</span>
+        <span>{profile?.organization.name ?? 'Secure invoice pipeline'} · 0.5.0</span>
         <Link href="/crm">CRM</Link>
+        <Link href="/approvals">Approvals</Link>
       </nav>
       <header className="invoice-header">
         <div>
@@ -252,12 +295,18 @@ export default function InvoicesPage() {
           {document?.duplicateOfDocumentId && (
             <p className="notice error">Exact duplicate detected.</p>
           )}
+          {selected?.status === 'AWAITING_APPROVAL' && (
+            <p className="notice error">
+              Saving changes invalidates the current decisions and requires a new risk version.
+            </p>
+          )}
           <button
             disabled={
               pending ||
               !selected ||
               !(
                 selected.status === 'NEEDS_REVIEW' ||
+                selected.status === 'AWAITING_APPROVAL' ||
                 (selected.status === 'MANUAL_REVIEW' &&
                   document?.storageState === 'APPROVED' &&
                   document.processing.scanResult === 'CLEAN')
@@ -266,6 +315,34 @@ export default function InvoicesPage() {
           >
             Save reviewer draft
           </button>
+          {selected?.status === 'NEEDS_REVIEW' && (
+            <button type="button" disabled={pending} onClick={() => void submitForApproval()}>
+              Score risk and request approval
+            </button>
+          )}
+          {selected?.approvalRequests?.[0] && (
+            <section
+              className={`risk-card ${selected.approvalRequests[0].riskAssessment.level.toLowerCase()}`}
+            >
+              <p className="eyebrow">EXPLAINABLE RISK</p>
+              <h3>
+                {selected.approvalRequests[0].riskAssessment.level} ·{' '}
+                {selected.approvalRequests[0].riskAssessment.totalScore} points
+              </h3>
+              {selected.approvalRequests[0].riskAssessment.contributions.map((item) => (
+                <p key={item.rule}>
+                  <strong>
+                    +{item.score} {item.rule}
+                  </strong>
+                  <span>{item.explanation}</span>
+                </p>
+              ))}
+              <small>
+                Evidence {selected.approvalRequests[0].riskAssessment.evidenceHash.slice(0, 16)}…
+              </small>
+              <Link href="/approvals">Review approval evidence</Link>
+            </section>
+          )}
         </form>
       </section>
     </main>

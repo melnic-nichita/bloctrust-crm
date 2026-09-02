@@ -307,6 +307,33 @@ export class VendorsService {
           },
           select: bankPublicSelect,
         });
+        let frozenApprovalCount = 0;
+        if (created.versionNumber > 1) {
+          const frozen = await transaction.approvalRequest.updateMany({
+            where: {
+              organizationId: auth.organizationId,
+              status: 'PENDING',
+              invoice: { vendorId },
+            },
+            data: {
+              status: 'INVALIDATED',
+              invalidatedReason: 'VENDOR_BANK_ACCOUNT_CHANGED',
+            },
+          });
+          frozenApprovalCount = frozen.count;
+          await transaction.invoice.updateMany({
+            where: {
+              organizationId: auth.organizationId,
+              vendorId,
+              status: 'AWAITING_APPROVAL',
+            },
+            data: {
+              status: 'NEEDS_REVIEW',
+              vendorBankAccountVersionId: null,
+              version: { increment: 1 },
+            },
+          });
+        }
         await writeAudit(transaction, {
           organizationId: auth.organizationId,
           actorMembershipId: auth.membershipId,
@@ -319,6 +346,7 @@ export class VendorsService {
             maskedAccount: created.maskedAccount,
             maskedAccountHolder: created.maskedAccountHolder,
             encryptionKeyId: created.encryptionKeyId,
+            frozenApprovalCount,
           },
         });
         return created;

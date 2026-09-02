@@ -28,6 +28,15 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm docker:validate
+      - run: pnpm validate:milestone
+
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - run: docker compose config --quiet
+      - run: docker compose build migrate api web worker
 
   database:
     runs-on: ubuntu-latest
