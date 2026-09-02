@@ -25,6 +25,8 @@ RUN pnpm db:generate \
 
 FROM build AS migration
 
+USER node
+
 CMD ["pnpm", "db:deploy"]
 
 FROM node:24-bookworm-slim AS runtime
